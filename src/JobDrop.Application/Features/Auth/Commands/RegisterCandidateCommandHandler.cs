@@ -1,4 +1,4 @@
-using JobDrop.Application.Contracts.Identity;
+﻿using JobDrop.Application.Contracts.Identity;
 using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Application.Features.Auth.DTOs;
 using JobDrop.Domain.Entities.Candidates;
@@ -7,81 +7,81 @@ using JobDrop.Domain.Entities.Identity;
 using JobDrop.Domain.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace JobDrop.Application.Features.Auth.Commands;
+
+public sealed record RegisterCandidateCommand(
+    string Email,
+    string Password,
+    string Handle,
+    string FullName,
+    string? Headline) : IRequest<AuthResponse>;
 
 public sealed class RegisterCandidateCommandHandler : IRequestHandler<RegisterCandidateCommand, AuthResponse>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IApplicationDbContext _db;
+    private readonly SignInManager<AppUser> _signInManager;
     private readonly ITokenService _tokens;
+    private readonly IApplicationDbContext _context;
 
     public RegisterCandidateCommandHandler(
         UserManager<AppUser> userManager,
-        IApplicationDbContext db,
-        ITokenService tokens)
+        SignInManager<AppUser> signInManager,
+        ITokenService tokens,
+        IApplicationDbContext context)
     {
         _userManager = userManager;
-        _db = db;
+        _signInManager = signInManager;
         _tokens = tokens;
+        _context = context;
     }
 
     public async Task<AuthResponse> Handle(RegisterCandidateCommand request, CancellationToken cancellationToken)
     {
-        var handleNormalized = request.Handle.Trim().ToLowerInvariant();
-
-        if (await _db.Users.AnyAsync(u => u.Handle == handleNormalized, cancellationToken))
-            throw new DomainRuleException("Handle is already taken.", "HANDLE_TAKEN");
+        var existingUser = await _userManager.FindByEmailAsync(request.Email);
+        if (existingUser != null)
+        {
+            throw new DomainRuleException("Email already registered.", "EMAIL_ALREADY_EXISTS");
+        }
 
         var user = new AppUser
         {
-            Email = request.Email.Trim().ToLowerInvariant(),
-            UserName = request.Email.Trim().ToLowerInvariant(),
-            Handle = handleNormalized,
-            EmailConfirmed = false,
-            LockoutEnabled = true
+            Email = request.Email,
+            UserName = request.Email,
+            Handle = request.Handle,
+            IsActive = true,
+            EmailConfirmed = false
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
-            var errors = result.Errors.ToDictionary(e => e.Code, e => new[] { e.Description });
-            throw new DomainRuleException(errors);
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new DomainRuleException($"User creation failed: {errors}", "USER_CREATION_FAILED");
         }
 
         await _userManager.AddToRoleAsync(user, "JobSeeker");
 
-        var profile = new CandidateProfile
-        {
-            UserId = user.Id,
-            Headline = request.FullName ?? string.Empty,
-            Summary = string.Empty
-        };
-        _db.CandidateProfiles.Add(profile);
+        // Use new constructor with userId, fullName, headline
+        var candidateProfile = new CandidateProfile(user.Id, request.FullName, request.Headline);
 
-        var wallet = new DropWalletBalance
-        {
-            CandidateProfileId = profile.Id,
-            DailyRemaining = 5,
-            DailyLimit = 5,
-            DailyResetAtUtc = DateTimeOffset.UtcNow.Date.AddDays(1),
-            BonusBalance = 0,
-            SpecialBalance = 0
-        };
-        _db.DropWalletBalances.Add(wallet);
+        _context.CandidateProfiles.Add(candidateProfile);
+        await _context.SaveChangesAsync(cancellationToken);
 
-        await _db.SaveChangesAsync(cancellationToken);
+        // Create wallet with constructor
+        var wallet = new DropWalletBalance(candidateProfile.Id, 5);
+        _context.DropWalletBalances.Add(wallet);
+        await _context.SaveChangesAsync(cancellationToken);
 
         var roles = await _userManager.GetRolesAsync(user);
-        var tokens = await _tokens.GenerateTokensAsync(user, roles, null, cancellationToken);
+        var tokens = await _tokens.GenerateTokensAsync(user, roles.ToList(), null, cancellationToken);
 
         return new AuthResponse(
             tokens.AccessToken,
             tokens.RefreshToken,
             tokens.AccessTokenExpiresAtUtc,
             user.Handle,
-            user.Email,
+            user.Email ?? string.Empty,
             roles.ToList());
     }
 }

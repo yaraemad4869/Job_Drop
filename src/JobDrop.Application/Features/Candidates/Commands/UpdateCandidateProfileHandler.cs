@@ -1,43 +1,54 @@
-using JobDrop.Application.Common;
-using JobDrop.Application.Contracts.Persistence;
-using JobDrop.Application.Features.Candidates.DTOs;
+﻿using JobDrop.Application.Contracts.Persistence;
+using JobDrop.Domain.Entities.Candidates;
 using JobDrop.Domain.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace JobDrop.Application.Features.Candidates.Commands;
 
-public sealed class UpdateCandidateProfileHandler : IRequestHandler<UpdateCandidateProfileCommand, CandidateProfileDto>
-{
-    private readonly IApplicationDbContext _db;
-    private readonly ICurrentUser _currentUser;
+public sealed record UpdateCandidateProfileCommand(
+    Guid CandidateProfileId,
+    string? FullName,
+    string? Headline,
+    string? Summary,
+    string? DropThemeCode) : IRequest<Unit>;
 
-    public UpdateCandidateProfileHandler(IApplicationDbContext db, ICurrentUser currentUser)
+public sealed class UpdateCandidateProfileHandler : IRequestHandler<UpdateCandidateProfileCommand, Unit>
+{
+    private readonly IApplicationDbContext _context;
+
+    public UpdateCandidateProfileHandler(IApplicationDbContext context)
     {
-        _db = db;
-        _currentUser = currentUser;
+        _context = context;
     }
 
-    public async Task<CandidateProfileDto> Handle(UpdateCandidateProfileCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(UpdateCandidateProfileCommand request, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId ?? throw new ForbiddenAccessException();
-        
-        var profile = await _db.CandidateProfiles
-            .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken)
-            ?? throw new NotFoundException(nameof(Domain.Entities.Candidates.CandidateProfile), userId);
+        var profile = await _context.CandidateProfiles
+            .FirstOrDefaultAsync(x => x.Id == request.CandidateProfileId, cancellationToken)
+            ?? throw new NotFoundException("Candidate profile not found.");
 
-        if (request.Payload.Headline != null) profile.Headline = request.Payload.Headline;
-        if (request.Payload.Summary != null) profile.Summary = request.Payload.Summary;
-        if (request.Payload.IsOptedInTalentSearch.HasValue) profile.IsOptedInTalentSearch = request.Payload.IsOptedInTalentSearch.Value;
-        if (request.Payload.DropThemeCode != null) profile.DropThemeCode = request.Payload.DropThemeCode;
+        // Use update methods instead of direct property assignment
+        if (request.FullName != null || request.Headline != null)
+        {
+            profile.UpdateProfile(
+                request.FullName ?? profile.FullName,
+                request.Headline ?? profile.Headline);
+        }
 
-        // TODO: Recalculate ProfileCompletenessPct based on sub-resources
-        profile.ProfileCompletenessPct = 50.0m; // Placeholder
+        if (request.Summary != null)
+        {
+            profile.UpdateSummary(request.Summary);
+        }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        if (request.DropThemeCode != null)
+        {
+            profile.UpdateDropTheme(request.DropThemeCode);
+        }
 
-        return new CandidateProfileDto(
-            profile.Id, profile.Headline, profile.Summary, profile.ProfileCompletenessPct,
-            profile.IsOptedInTalentSearch, profile.DropThemeCode);
+        _context.CandidateProfiles.Update(profile);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Unit.Value;
     }
 }

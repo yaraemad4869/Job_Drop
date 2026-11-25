@@ -1,4 +1,4 @@
-using JobDrop.Application.Common;
+﻿using JobDrop.Application.Common;
 using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Domain.Entities.Billing;
 using JobDrop.Domain.Entities.Candidates;
@@ -12,7 +12,6 @@ using JobDrop.Domain.Entities.Messaging;
 using JobDrop.Domain.Entities.Observability;
 using JobDrop.Domain.Entities.Reference;
 using JobDrop.Domain.Entities.ReverseDrops;
-using JobDrop.Domain.Entities.Sla;
 using JobDrop.Domain.Entities.Storage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

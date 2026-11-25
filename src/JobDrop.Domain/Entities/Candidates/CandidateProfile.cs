@@ -1,28 +1,50 @@
-using JobDrop.Domain.Common;
-using JobDrop.Domain.Enums;
-using JobDrop.Domain.Entities.Identity;
+﻿using JobDrop.Domain.Common;
 
 namespace JobDrop.Domain.Entities.Candidates;
 
-public sealed class CandidateProfile : ConcurrentAuditableEntity
+public sealed class CandidateProfile : BaseEntity
 {
-    public Guid UserId { get; set; }
-    public string Headline { get; set; } = string.Empty;
-    public string Summary { get; set; } = string.Empty;
-    public string PreferredWorkModesJson { get; set; } = "[]";
-    public string SharingProtocolJson { get; set; } = "{}";
-    public string DropThemeCode { get; set; } = "classic";
-    public bool IsOptedInTalentSearch { get; set; } = true;
-    public decimal ProfileCompletenessPct { get; set; }
+    public Guid UserId { get; private set; }
+    public string FullName { get; private set; } = string.Empty;
+    public string? Headline { get; private set; }
+    public string? Summary { get; private set; }
+    public string? PreferredWorkModes { get; private set; }
+    public string? SharingProtocolJson { get; private set; }
+    public string? DropThemeCode { get; private set; }
+    
 
-    public AppUser? User { get; set; }
-    public ICollection<WorkExperience> WorkExperiences { get; set; } = new List<WorkExperience>();
-    public ICollection<Education> Educations { get; set; } = new List<Education>();
-    public ICollection<CandidateSkill> Skills { get; set; } = new List<CandidateSkill>();
-    public ICollection<CandidateLanguage> Languages { get; set; } = new List<CandidateLanguage>();
-    public ICollection<CandidateDocument> Documents { get; set; } = new List<CandidateDocument>();
-    public ICollection<StartingPoint> StartingPoints { get; set; } = new List<StartingPoint>();
-    public ICollection<SavedRegion> SavedRegions { get; set; } = new List<SavedRegion>();
-    public ICollection<TargetCompensation> TargetCompensations { get; set; } = new List<TargetCompensation>();
-    public ICollection<WorkPermit> WorkPermits { get; set; } = new List<WorkPermit>();
+    private CandidateProfile() { }
+
+    public CandidateProfile(Guid userId, string fullName, string? headline = null)
+    {
+        UserId = userId;
+        FullName = fullName ?? throw new ArgumentNullException(nameof(fullName));
+        Headline = headline;
+    }
+
+    public void UpdateProfile(string fullName, string? headline)
+    {
+        FullName = fullName ?? throw new ArgumentNullException(nameof(fullName));
+        Headline = headline;
+    }
+
+    public void UpdateSummary(string? summary)
+    {
+        Summary = summary;
+    }
+
+    public void UpdatePreferredWorkModes(string? preferredWorkModes)
+    {
+        PreferredWorkModes = preferredWorkModes;
+    }
+
+    public void UpdateSharingProtocol(string? sharingProtocolJson)
+    {
+        SharingProtocolJson = sharingProtocolJson;
+    }
+
+    public void UpdateDropTheme(string? dropThemeCode)
+    {
+        DropThemeCode = dropThemeCode;
+    }
 }

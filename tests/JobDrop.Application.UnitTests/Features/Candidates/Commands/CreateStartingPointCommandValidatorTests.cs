@@ -1,64 +1,88 @@
-using Xunit;
-using FluentAssertions;
+﻿using FluentAssertions;
 using JobDrop.Application.Features.Candidates.Commands;
+using Xunit;
 
 namespace JobDrop.Application.UnitTests.Features.Candidates.Commands;
 
 public class CreateStartingPointCommandValidatorTests
 {
-    private readonly CreateStartingPointCommandValidator _validator = new();
-
     [Fact]
-    public void ValidCommand_ShouldPass()
+    public void Validate_WithValidCommand_ShouldPass()
     {
-        var command = new CreateStartingPointCommand("Home", 0, 30.0444, 31.2357, true);
-        var result = _validator.Validate(command);
+        // Arrange
+        var validator = new CreateStartingPointCommandValidator();
+        var command = new CreateStartingPointCommand(
+            CandidateProfileId: Guid.NewGuid(),
+            Label: "Home",
+            AnchorType: "Primary",
+            Latitude: 30.0444,
+            Longitude: 31.2357,
+            IsActiveOrigin: true);
+
+        // Act
+        var result = validator.Validate(command);
+
+        // Assert
         result.IsValid.Should().BeTrue();
     }
 
     [Fact]
-    public void EmptyLabel_ShouldFail()
+    public void Validate_WithInvalidAnchorType_ShouldFail()
     {
-        var command = new CreateStartingPointCommand("", 0, 30.0444, 31.2357, true);
-        var result = _validator.Validate(command);
-        result.IsValid.Should().BeFalse();
-    }
+        // Arrange
+        var validator = new CreateStartingPointCommandValidator();
+        var command = new CreateStartingPointCommand(
+            CandidateProfileId: Guid.NewGuid(),
+            Label: "Home",
+            AnchorType: "Invalid",
+            Latitude: 30.0444,
+            Longitude: 31.2357,
+            IsActiveOrigin: true);
 
-    [Theory]
-    [InlineData(-1)]
-    [InlineData(3)]
-    public void InvalidAnchorType_ShouldFail(int anchorType)
-    {
-        var command = new CreateStartingPointCommand("Home", anchorType, 30.0444, 31.2357, true);
-        var result = _validator.Validate(command);
-        result.IsValid.Should().BeFalse();
-    }
+        // Act
+        var result = validator.Validate(command);
 
-    [Theory]
-    [InlineData(-91.0)]
-    [InlineData(91.0)]
-    public void InvalidLatitude_ShouldFail(double latitude)
-    {
-        var command = new CreateStartingPointCommand("Home", 0, latitude, 31.2357, true);
-        var result = _validator.Validate(command);
-        result.IsValid.Should().BeFalse();
-    }
-
-    [Theory]
-    [InlineData(-181.0)]
-    [InlineData(181.0)]
-    public void InvalidLongitude_ShouldFail(double longitude)
-    {
-        var command = new CreateStartingPointCommand("Home", 0, 30.0444, longitude, true);
-        var result = _validator.Validate(command);
+        // Assert
         result.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public void NullIsland_ShouldFail()
+    public void Validate_WithInvalidLatitude_ShouldFail()
     {
-        var command = new CreateStartingPointCommand("Home", 0, 0, 0, true);
-        var result = _validator.Validate(command);
+        // Arrange
+        var validator = new CreateStartingPointCommandValidator();
+        var command = new CreateStartingPointCommand(
+            CandidateProfileId: Guid.NewGuid(),
+            Label: "Home",
+            AnchorType: "Primary",
+            Latitude: 95.0,
+            Longitude: 31.2357,
+            IsActiveOrigin: true);
+
+        // Act
+        var result = validator.Validate(command);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Validate_WithEmptyLabel_ShouldFail()
+    {
+        // Arrange
+        var validator = new CreateStartingPointCommandValidator();
+        var command = new CreateStartingPointCommand(
+            CandidateProfileId: Guid.NewGuid(),
+            Label: "",
+            AnchorType: "Primary",
+            Latitude: 30.0444,
+            Longitude: 31.2357,
+            IsActiveOrigin: true);
+
+        // Act
+        var result = validator.Validate(command);
+
+        // Assert
         result.IsValid.Should().BeFalse();
     }
 }

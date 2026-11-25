@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using JobDrop.Domain.Entities.Geography;
 using JobDrop.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;

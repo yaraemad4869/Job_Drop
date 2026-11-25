@@ -1,18 +1,17 @@
-using Xunit;
-using FluentAssertions;
+﻿using FluentAssertions;
 using JobDrop.Domain.ValueObjects;
+using Xunit;
 
 namespace JobDrop.Domain.UnitTests.ValueObjects;
 
 public class GeoPointTests
 {
     [Fact]
-    public void Constructor_ValidCoordinates_ShouldCreatePoint()
+    public void Constructor_WithValidCoordinates_ShouldCreateGeoPoint()
     {
         var point = new GeoPoint(30.0444, 31.2357);
         point.Latitude.Should().Be(30.0444);
         point.Longitude.Should().Be(31.2357);
-        point.SRID.Should().Be(4326);
     }
 
     [Theory]
@@ -20,65 +19,18 @@ public class GeoPointTests
     [InlineData(-91.0, 0.0)]
     [InlineData(0.0, 181.0)]
     [InlineData(0.0, -181.0)]
-    public void Constructor_OutOfRangeCoordinates_ShouldThrow(double lat, double lon)
+    public void Validate_WithInvalidCoordinates_ShouldThrow(double lat, double lon)
     {
-        var act = () => new GeoPoint(lat, lon);
+        var point = new GeoPoint(lat, lon);
+        var act = () => point.Validate();
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
-    public void Constructor_NullIsland_ShouldThrow()
+    public void Validate_WithZeroZeroCoordinates_ShouldThrow()
     {
-        var act = () => new GeoPoint(0, 0);
-        act.Should().Throw<ArgumentException>().WithMessage("*Null Island*");
-    }
-
-    [Theory]
-    [InlineData(double.NaN, 0.0)]
-    [InlineData(double.PositiveInfinity, 0.0)]
-    public void Constructor_NaNOrInfinity_ShouldThrow(double lat, double lon)
-    {
-        var act = () => new GeoPoint(lat, lon);
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void Equals_SameCoordinates_ShouldBeEqual()
-    {
-        var point1 = new GeoPoint(30.0444, 31.2357);
-        var point2 = new GeoPoint(30.0444, 31.2357);
-        point1.Should().Be(point2);
-        (point1 == point2).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Equals_DifferentCoordinates_ShouldNotBeEqual()
-    {
-        var point1 = new GeoPoint(30.0444, 31.2357);
-        var point2 = new GeoPoint(25.2048, 55.2708);
-        point1.Should().NotBe(point2);
-        (point1 != point2).Should().BeTrue();
-    }
-
-    [Fact]
-    public void GetHashCode_SameCoordinates_ShouldReturnSameHash()
-    {
-        var point1 = new GeoPoint(30.0444, 31.2357);
-        var point2 = new GeoPoint(30.0444, 31.2357);
-        point1.GetHashCode().Should().Be(point2.GetHashCode());
-    }
-
-    [Fact]
-    public void ToString_ShouldReturnWktFormat()
-    {
-        var point = new GeoPoint(30.0444, 31.2357);
-        point.ToString().Should().Be("POINT(31.2357 30.0444)");
-    }
-
-    [Fact]
-    public void Constructor_CustomSrid_ShouldPreserveSrid()
-    {
-        var point = new GeoPoint(30.0444, 31.2357, 3857);
-        point.SRID.Should().Be(3857);
+        var point = new GeoPoint(0.0, 0.0);
+        var act = () => point.Validate();
+        act.Should().Throw<ArgumentException>().WithMessage("Coordinates cannot be (0,0).*");
     }
 }

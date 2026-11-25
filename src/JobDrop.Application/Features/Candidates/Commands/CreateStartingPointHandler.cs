@@ -1,52 +1,35 @@
-using JobDrop.Application.Common;
-using JobDrop.Application.Contracts.Persistence;
-using JobDrop.Application.Features.Candidates.DTOs;
+﻿using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Domain.Entities.Candidates;
-using JobDrop.Domain.Enums;
-using JobDrop.Domain.Exceptions;
-using JobDrop.Domain.ValueObjects;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace JobDrop.Application.Features.Candidates.Commands;
 
-public sealed class CreateStartingPointHandler : IRequestHandler<CreateStartingPointCommand, StartingPointDto>
+public sealed class CreateStartingPointHandler : IRequestHandler<CreateStartingPointCommand, Guid>
 {
-    private readonly IApplicationDbContext _db;
-    private readonly ICurrentUser _currentUser;
+    private readonly IApplicationDbContext _context;
 
-    public CreateStartingPointHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public CreateStartingPointHandler(IApplicationDbContext context)
     {
-        _db = db;
-        _currentUser = currentUser;
+        _context = context;
     }
 
-    public async Task<StartingPointDto> Handle(CreateStartingPointCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateStartingPointCommand request, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId ?? throw new ForbiddenAccessException();
-        
-        var profile = await _db.CandidateProfiles
-            .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken)
-            ?? throw new NotFoundException(nameof(Domain.Entities.Candidates.CandidateProfile), userId);
+        var startingPoint = new StartingPoint(
+            request.CandidateProfileId,
+            request.Label,
+            request.AnchorType,
+            request.Latitude,
+            request.Longitude);
 
-        // Enforce max starting points limit (e.g., 5)
-        var count = await _db.StartingPoints.CountAsync(p => p.CandidateProfileId == profile.Id, cancellationToken);
-        if (count >= 5) throw new CapacityExceededException("Maximum 5 starting points allowed.");
-
-        var startingPoint = new StartingPoint
+        if (!request.IsActiveOrigin)
         {
-            CandidateProfileId = profile.Id,
-            Label = request.Label,
-            AnchorType = (AnchorType)request.AnchorType,
-            Location = new GeoPoint(request.Latitude, request.Longitude),
-            IsActiveOrigin = request.IsActiveOrigin
-        };
+            startingPoint.Deactivate();
+        }
 
-        _db.StartingPoints.Add(startingPoint);
-        await _db.SaveChangesAsync(cancellationToken);
+        _context.StartingPoints.Add(startingPoint);
+        await _context.SaveChangesAsync(cancellationToken);
 
-        return new StartingPointDto(
-            startingPoint.Id, startingPoint.Label, startingPoint.AnchorType,
-            startingPoint.Location.Latitude, startingPoint.Location.Longitude, startingPoint.IsActiveOrigin);
+        return startingPoint.Id;
     }
 }

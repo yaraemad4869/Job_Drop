@@ -1,49 +1,90 @@
-using Xunit;
+﻿using JobDrop.Application.UnitTests;
 using FluentAssertions;
-using JobDrop.Application.Common;
-using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Application.Features.Candidates.Commands;
-using JobDrop.Domain.Exceptions;
-using NSubstitute;
+using JobDrop.Domain.Entities.Candidates;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
 
 namespace JobDrop.Application.UnitTests.Features.Candidates.Commands;
 
-// NOTE: Database-dependent paths (ProfileNotFound) are covered by Integration Tests.
-// NSubstitute cannot mock EF Core async queries (IAsyncQueryProvider).
-public class UpdateCandidateProfileHandlerTests
+public class UpdateCandidateProfileHandlerTests : IDisposable
 {
-    private readonly IApplicationDbContext _db;
-    private readonly ICurrentUser _currentUser;
+    private readonly TestDbContext _context;
     private readonly UpdateCandidateProfileHandler _handler;
 
     public UpdateCandidateProfileHandlerTests()
     {
-        _db = Substitute.For<IApplicationDbContext>();
-        _currentUser = Substitute.For<ICurrentUser>();
-        _handler = new UpdateCandidateProfileHandler(_db, _currentUser);
+        var options = new DbContextOptionsBuilder<TestDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new TestDbContext(options);
+        _handler = new UpdateCandidateProfileHandler(_context);
     }
 
     [Fact]
-    public async Task Handle_UnauthenticatedUser_ShouldThrowForbiddenAccessException()
+    public async Task Handle_WithValidCommand_ShouldUpdateProfile()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        // Arrange
+        var existingProfile = new CandidateProfile(Guid.NewGuid(), "Original Name", "Original Title");
+        _context.CandidateProfiles.Add(existingProfile);
+        await _context.SaveChangesAsync();
+
         var command = new UpdateCandidateProfileCommand(
-            new UpdateCandidateProfileCommand.Data("New Headline", null, null, null));
+            CandidateProfileId: existingProfile.Id,
+            FullName: "Updated Name",
+            Headline: "Senior Developer",
+            Summary: "Experienced developer",
+            DropThemeCode: "dark");
 
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
 
-        await act.Should().ThrowAsync<ForbiddenAccessException>();
+        // Assert
+        result.Should().NotBeNull();
+        
+        var updatedProfile = await _context.CandidateProfiles
+            .FirstOrDefaultAsync(p => p.Id == existingProfile.Id);
+        
+        updatedProfile.Should().NotBeNull();
+        updatedProfile!.FullName.Should().Be("Updated Name");
+        updatedProfile.Headline.Should().Be("Senior Developer");
+        updatedProfile.Summary.Should().Be("Experienced developer");
+        updatedProfile.DropThemeCode.Should().Be("dark");
     }
 
     [Fact]
-    public async Task Handle_UnauthenticatedUser_ShouldNotTouchDatabase()
+    public async Task Handle_WithPartialUpdate_ShouldUpdateOnlyProvidedFields()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        // Arrange
+        var existingProfile = new CandidateProfile(Guid.NewGuid(), "Original Name", "Original Title");
+        _context.CandidateProfiles.Add(existingProfile);
+        await _context.SaveChangesAsync();
+
         var command = new UpdateCandidateProfileCommand(
-            new UpdateCandidateProfileCommand.Data("X", null, null, null));
+            CandidateProfileId: existingProfile.Id,
+            FullName: null,
+            Headline: "Updated Headline Only",
+            Summary: null,
+            DropThemeCode: null);
 
-        try { await _handler.Handle(command, CancellationToken.None); } catch { }
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
 
-        await _db.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        // Assert
+        result.Should().NotBeNull();
+        
+        var updatedProfile = await _context.CandidateProfiles
+            .FirstOrDefaultAsync(p => p.Id == existingProfile.Id);
+        
+        updatedProfile.Should().NotBeNull();
+        updatedProfile!.FullName.Should().Be("Original Name"); // Unchanged
+        updatedProfile.Headline.Should().Be("Updated Headline Only"); // Changed
+        updatedProfile.Summary.Should().BeNull();
+    }
+
+    public void Dispose()
+    {
+        _context.Dispose();
     }
 }

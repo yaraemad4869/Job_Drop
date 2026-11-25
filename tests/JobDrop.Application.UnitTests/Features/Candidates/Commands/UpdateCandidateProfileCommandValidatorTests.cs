@@ -1,46 +1,72 @@
-using Xunit;
-using FluentAssertions;
+﻿using FluentAssertions;
 using JobDrop.Application.Features.Candidates.Commands;
+using Xunit;
 
 namespace JobDrop.Application.UnitTests.Features.Candidates.Commands;
 
 public class UpdateCandidateProfileCommandValidatorTests
 {
-    private readonly UpdateCandidateProfileCommandValidator _validator = new();
-
     [Fact]
-    public void ValidCommand_ShouldPass()
+    public void Validate_WithValidCommand_ShouldPass()
     {
+        var validator = new UpdateCandidateProfileCommandValidator();
         var command = new UpdateCandidateProfileCommand(
-            new UpdateCandidateProfileCommand.Data("Headline", "Summary", true, "classic"));
-        var result = _validator.Validate(command);
+            CandidateProfileId: Guid.NewGuid(),
+            FullName: "Test User",
+            Headline: "Developer",
+            Summary: "Summary text",
+            DropThemeCode: "dark");
+
+        var result = validator.Validate(command);
+
         result.IsValid.Should().BeTrue();
     }
 
     [Fact]
-    public void NullPayload_ShouldPass()
+    public void Validate_WithEmptyCandidateProfileId_ShouldFail()
     {
+        var validator = new UpdateCandidateProfileCommandValidator();
         var command = new UpdateCandidateProfileCommand(
-            new UpdateCandidateProfileCommand.Data(null, null, null, null));
-        var result = _validator.Validate(command);
-        result.IsValid.Should().BeTrue();
-    }
+            CandidateProfileId: Guid.Empty,
+            FullName: "Test User",
+            Headline: null,
+            Summary: null,
+            DropThemeCode: null);
 
-    [Fact]
-    public void HeadlineTooLong_ShouldFail()
-    {
-        var command = new UpdateCandidateProfileCommand(
-            new UpdateCandidateProfileCommand.Data("a".PadRight(201, 'a'), null, null, null));
-        var result = _validator.Validate(command);
+        var result = validator.Validate(command);
+
         result.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public void SummaryTooLong_ShouldFail()
+    public void Validate_WithLongFullName_ShouldFail()
     {
+        var validator = new UpdateCandidateProfileCommandValidator();
         var command = new UpdateCandidateProfileCommand(
-            new UpdateCandidateProfileCommand.Data(null, "a".PadRight(4001, 'a'), null, null));
-        var result = _validator.Validate(command);
+            CandidateProfileId: Guid.NewGuid(),
+            FullName: new string('a', 201),
+            Headline: null,
+            Summary: null,
+            DropThemeCode: null);
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Validate_WithLongSummary_ShouldFail()
+    {
+        var validator = new UpdateCandidateProfileCommandValidator();
+        var command = new UpdateCandidateProfileCommand(
+            CandidateProfileId: Guid.NewGuid(),
+            FullName: null,
+            Headline: null,
+            Summary: new string('a', 4001),
+            DropThemeCode: null);
+
+        var result = validator.Validate(command);
+
         result.IsValid.Should().BeFalse();
     }
 }

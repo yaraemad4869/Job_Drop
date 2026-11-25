@@ -1,4 +1,4 @@
-using JobDrop.Domain.Entities.Jobs;
+﻿using JobDrop.Domain.Entities.Jobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,7 +18,6 @@ public sealed class JobConfiguration : IEntityTypeConfiguration<Job>
         builder.Property(x => x.SalaryMax).HasPrecision(18, 2);
         builder.Property(x => x.SalaryCurrency).HasMaxLength(8).HasDefaultValue("USD");
         builder.Property(x => x.SalaryPeriod).HasMaxLength(20).HasDefaultValue("Monthly");
-        builder.Property(x => x.RowVersion).IsRowVersion();
         builder.HasOne(x => x.Company).WithMany(c => c.Jobs).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(x => x.Office).WithMany().HasForeignKey(x => x.OfficeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(x => new { x.Status, x.PublishedAtUtc });

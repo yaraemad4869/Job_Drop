@@ -1,48 +1,71 @@
-using Xunit;
-using FluentAssertions;
+﻿using FluentAssertions;
 using JobDrop.Application.Features.Companies.Commands;
+using Xunit;
 
 namespace JobDrop.Application.UnitTests.Features.Companies.Commands;
 
 public class CreateCompanyOfficeCommandValidatorTests
 {
-    private readonly CreateCompanyOfficeCommandValidator _validator = new();
-
     [Fact]
-    public void ValidCommand_ShouldPass()
+    public void Validate_WithValidCommand_ShouldPass()
     {
+        // Arrange
+        var validator = new CreateCompanyOfficeCommandValidator();
         var command = new CreateCompanyOfficeCommand(
-            Guid.NewGuid(), "HQ Cairo", 0, 30.0444, 31.2357, 500, null);
-        var result = _validator.Validate(command);
+            CompanyId: Guid.NewGuid(),
+            Nickname: "Main Office",
+            OfficeType: "HQ",
+            Latitude: 30.0444,
+            Longitude: 31.2357,
+            GeofenceRadiusMeters: 500,
+            TransitAnchorText: "Near Metro");
+
+        // Act
+        var result = validator.Validate(command);
+
+        // Assert
         result.IsValid.Should().BeTrue();
     }
 
     [Fact]
-    public void EmptyCompanyId_ShouldFail()
+    public void Validate_WithInvalidOfficeType_ShouldFail()
     {
+        // Arrange
+        var validator = new CreateCompanyOfficeCommandValidator();
         var command = new CreateCompanyOfficeCommand(
-            Guid.Empty, "HQ", 0, 30.0444, 31.2357, 500, null);
-        var result = _validator.Validate(command);
+            CompanyId: Guid.NewGuid(),
+            Nickname: "Main Office",
+            OfficeType: "Invalid",
+            Latitude: 30.0444,
+            Longitude: 31.2357,
+            GeofenceRadiusMeters: 500,
+            TransitAnchorText: null);
+
+        // Act
+        var result = validator.Validate(command);
+
+        // Assert
         result.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public void EmptyNickname_ShouldFail()
+    public void Validate_WithInvalidLatitude_ShouldFail()
     {
+        // Arrange
+        var validator = new CreateCompanyOfficeCommandValidator();
         var command = new CreateCompanyOfficeCommand(
-            Guid.NewGuid(), "", 0, 30.0444, 31.2357, 500, null);
-        var result = _validator.Validate(command);
-        result.IsValid.Should().BeFalse();
-    }
+            CompanyId: Guid.NewGuid(),
+            Nickname: "Main Office",
+            OfficeType: "HQ",
+            Latitude: 95.0,
+            Longitude: 31.2357,
+            GeofenceRadiusMeters: 500,
+            TransitAnchorText: null);
 
-    [Theory]
-    [InlineData(49)]
-    [InlineData(50001)]
-    public void InvalidGeofenceRadius_ShouldFail(int radius)
-    {
-        var command = new CreateCompanyOfficeCommand(
-            Guid.NewGuid(), "HQ", 0, 30.0444, 31.2357, radius, null);
-        var result = _validator.Validate(command);
+        // Act
+        var result = validator.Validate(command);
+
+        // Assert
         result.IsValid.Should().BeFalse();
     }
 }

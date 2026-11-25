@@ -272,8 +272,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CandidateProfileId");
-
                     b.ToTable("CandidateDocuments");
                 });
 
@@ -294,8 +292,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CandidateProfileId");
-
                     b.ToTable("CandidateLanguages");
                 });
 
@@ -304,54 +300,28 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("DropThemeCode")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("Headline")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<bool>("IsOptedInTalentSearch")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("LastModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PreferredWorkModesJson")
-                        .IsRequired()
+                    b.Property<string>("PreferredWorkModes")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
-
-                    b.Property<decimal>("ProfileCompletenessPct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
 
                     b.Property<string>("SharingProtocolJson")
-                        .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
 
                     b.Property<string>("Summary")
-                        .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
 
@@ -363,7 +333,7 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("CandidateProfiles", (string)null);
+                    b.ToTable("candidate_profiles", (string)null);
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.CandidateSkill", b =>
@@ -388,8 +358,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CandidateProfileId");
 
                     b.ToTable("CandidateSkills");
                 });
@@ -431,8 +399,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CandidateProfileId");
 
                     b.ToTable("Educations");
                 });
@@ -479,8 +445,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CandidateProfileId");
-
                     b.ToTable("SavedRegions");
                 });
 
@@ -514,8 +478,10 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("AnchorType")
-                        .HasColumnType("integer");
+                    b.Property<string>("AnchorType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid>("CandidateProfileId")
                         .HasColumnType("uuid");
@@ -525,26 +491,25 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Label")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("location");
+                    b.Property<double>("Latitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("double precision");
 
-                    b.Property<string>("PlaceReferenceId")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                    b.Property<double>("Longitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("double precision");
 
                     b.Property<string>("PrivacyZoneLabel")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CandidateProfileId")
-                        .HasDatabaseName("ix_starting_points_candidate");
+                    b.HasIndex("CandidateProfileId");
 
                     b.ToTable("starting_points", (string)null);
                 });
@@ -579,8 +544,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CandidateProfileId");
 
                     b.ToTable("TargetCompensations");
                 });
@@ -618,8 +581,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CandidateProfileId");
-
                     b.ToTable("WorkExperiences");
                 });
 
@@ -647,8 +608,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CandidateProfileId");
 
                     b.ToTable("WorkPermits");
                 });
@@ -853,54 +812,35 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("GeofenceRadiusMeters")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(500);
 
-                    b.Property<DateTimeOffset?>("LastModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("location");
+                    b.Property<double>("Latitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("double precision");
 
                     b.Property<int>("LocationVersion")
+                        .IsConcurrencyToken()
                         .HasColumnType("integer");
 
-                    b.Property<string>("MakaniCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<double>("Longitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("double precision");
 
                     b.Property<string>("Nickname")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
-                    b.Property<int>("OfficeType")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("OperatingAreaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PlusCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
+                    b.Property<string>("OfficeType")
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid?>("OperatingAreaId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("TransitAnchorText")
                         .HasMaxLength(250)
@@ -911,10 +851,7 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OperatingAreaId");
-
-                    b.HasIndex("CompanyId", "VerificationLevel")
-                        .HasDatabaseName("ix_company_offices_company_verification");
+                    b.HasIndex("CompanyId");
 
                     b.ToTable("company_offices", (string)null);
                 });
@@ -926,8 +863,8 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("AuditHash")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid>("CompanyOfficeId")
                         .HasColumnType("uuid");
@@ -936,11 +873,10 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FieldEvidenceKey")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<string>("GpsPoint")
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("gps_point");
 
                     b.Property<DateTimeOffset?>("ReviewedAtUtc")
@@ -954,16 +890,14 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AuditHash")
                         .IsUnique()
-                        .HasDatabaseName("uq_office_field_audits_hash");
-
-                    b.HasIndex("CompanyOfficeId");
+                        .HasDatabaseName("uq_field_audit_hash");
 
                     b.ToTable("office_field_audits", (string)null);
                 });
@@ -1220,6 +1154,36 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.ToTable("ApplicationEvents");
                 });
 
+            modelBuilder.Entity("JobDrop.Domain.Entities.Drops.ApplicationSla", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RespondedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "DueAtUtc");
+
+                    b.ToTable("application_slas", (string)null);
+                });
+
             modelBuilder.Entity("JobDrop.Domain.Entities.Drops.ApplicationSnapshot", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1279,7 +1243,7 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CandidateProfileId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                    b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Delta")
@@ -1287,19 +1251,15 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("ReasonCode")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<Guid?>("ReferenceId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<int>("RunningBalanceAfter")
-                        .HasColumnType("integer");
+                    b.Property<string>("ReferenceId")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -1308,7 +1268,7 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CandidateProfileId", "CreatedAtUtc");
 
-                    b.ToTable("DropLedgerEntries", (string)null);
+                    b.ToTable("drop_ledger_entries", (string)null);
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Drops.DropWalletBalance", b =>
@@ -1322,33 +1282,14 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CandidateProfileId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("DailyLimit")
                         .HasColumnType("integer");
 
                     b.Property<int>("DailyRemaining")
                         .HasColumnType("integer");
 
-                    b.Property<DateTimeOffset>("DailyResetAtUtc")
+                    b.Property<DateTime>("DailyResetAtUtc")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("LastModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
 
                     b.Property<int>("SpecialBalance")
                         .HasColumnType("integer");
@@ -1358,7 +1299,7 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasIndex("CandidateProfileId")
                         .IsUnique();
 
-                    b.ToTable("DropWalletBalances", (string)null);
+                    b.ToTable("drop_wallet_balances", (string)null);
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Drops.PinnedDrop", b =>
@@ -1681,20 +1622,13 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset?>("ClosedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<int>("CurrentApplicantsCount")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("DailyIntakeCap")
+                    b.Property<int>("DailyIntakeLimit")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
@@ -1702,32 +1636,20 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasMaxLength(8000)
                         .HasColumnType("character varying(8000)");
 
-                    b.Property<bool>("IsSalaryNegotiable")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("LastModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
+                    b.Property<string>("EmploymentType")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("OfficeId")
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("OfficeId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("OwnerUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("PublishedAtUtc")
+                    b.Property<DateTime?>("PublishedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
-
                     b.Property<string>("SalaryCurrency")
-                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(8)
                         .HasColumnType("character varying(8)")
@@ -1742,14 +1664,14 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("SalaryPeriod")
-                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasDefaultValue("Monthly");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("ThemeColorHex")
                         .HasMaxLength(9)
@@ -1760,8 +1682,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int>("WorkMode")
-                        .HasColumnType("integer");
+                    b.Property<string>("WorkMode")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -1793,10 +1716,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CompanyMemberId");
-
-                    b.HasIndex("JobId");
 
                     b.ToTable("JobAssignments");
                 });
@@ -2366,7 +2285,7 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasIndex("ApplicationId")
                         .IsUnique();
 
-                    b.ToTable("ApplicationSlas");
+                    b.ToTable("ApplicationSla");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Storage.StorageUploadIntent", b =>
@@ -2509,98 +2428,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.CandidateDocument", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", null)
-                        .WithMany("Documents")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.CandidateLanguage", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", null)
-                        .WithMany("Languages")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.CandidateProfile", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Identity.AppUser", "User")
-                        .WithOne()
-                        .HasForeignKey("JobDrop.Domain.Entities.Candidates.CandidateProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.CandidateSkill", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", null)
-                        .WithMany("Skills")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.Education", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", null)
-                        .WithMany("Educations")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.SavedRegion", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", null)
-                        .WithMany("SavedRegions")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.StartingPoint", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", null)
-                        .WithMany("StartingPoints")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.TargetCompensation", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", null)
-                        .WithMany("TargetCompensations")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.WorkExperience", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", null)
-                        .WithMany("WorkExperiences")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.WorkPermit", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", null)
-                        .WithMany("WorkPermits")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("JobDrop.Domain.Entities.Companies.CompanyCalendar", b =>
                 {
                     b.HasOne("JobDrop.Domain.Entities.Companies.Company", "Company")
@@ -2633,28 +2460,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Companies.CompanyOffice", b =>
                 {
-                    b.HasOne("JobDrop.Domain.Entities.Companies.Company", "Company")
+                    b.HasOne("JobDrop.Domain.Entities.Companies.Company", null)
                         .WithMany("Offices")
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("JobDrop.Domain.Entities.Geography.OperatingArea", "OperatingArea")
-                        .WithMany()
-                        .HasForeignKey("OperatingAreaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-
-                    b.Navigation("OperatingArea");
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Companies.OfficeFieldAudit", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Companies.CompanyOffice", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyOfficeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -2697,6 +2505,17 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Navigation("Application");
                 });
 
+            modelBuilder.Entity("JobDrop.Domain.Entities.Drops.ApplicationSla", b =>
+                {
+                    b.HasOne("JobDrop.Domain.Entities.Drops.Application", "Application")
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+                });
+
             modelBuilder.Entity("JobDrop.Domain.Entities.Drops.ApplicationSnapshot", b =>
                 {
                     b.HasOne("JobDrop.Domain.Entities.Drops.Application", "Application")
@@ -2706,17 +2525,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Application");
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Drops.DropWalletBalance", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Candidates.CandidateProfile", "CandidateProfile")
-                        .WithMany()
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CandidateProfile");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Jobs.Job", b =>
@@ -2730,31 +2538,11 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasOne("JobDrop.Domain.Entities.Companies.CompanyOffice", "Office")
                         .WithMany()
                         .HasForeignKey("OfficeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Company");
 
                     b.Navigation("Office");
-                });
-
-            modelBuilder.Entity("JobDrop.Domain.Entities.Jobs.JobAssignment", b =>
-                {
-                    b.HasOne("JobDrop.Domain.Entities.Companies.CompanyMember", "Member")
-                        .WithMany()
-                        .HasForeignKey("CompanyMemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("JobDrop.Domain.Entities.Jobs.Job", "Job")
-                        .WithMany("Assignments")
-                        .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Job");
-
-                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Jobs.JobDailyIntake", b =>
@@ -2771,7 +2559,7 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("JobDrop.Domain.Entities.Jobs.JobRequirement", b =>
                 {
                     b.HasOne("JobDrop.Domain.Entities.Jobs.Job", "Job")
-                        .WithMany("Requirements")
+                        .WithMany()
                         .HasForeignKey("JobId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2908,27 +2696,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("JobDrop.Domain.Entities.Candidates.CandidateProfile", b =>
-                {
-                    b.Navigation("Documents");
-
-                    b.Navigation("Educations");
-
-                    b.Navigation("Languages");
-
-                    b.Navigation("SavedRegions");
-
-                    b.Navigation("Skills");
-
-                    b.Navigation("StartingPoints");
-
-                    b.Navigation("TargetCompensations");
-
-                    b.Navigation("WorkExperiences");
-
-                    b.Navigation("WorkPermits");
-                });
-
             modelBuilder.Entity("JobDrop.Domain.Entities.Companies.Company", b =>
                 {
                     b.Navigation("Jobs");
@@ -2951,11 +2718,7 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                 {
                     b.Navigation("Applications");
 
-                    b.Navigation("Assignments");
-
                     b.Navigation("DailyIntakes");
-
-                    b.Navigation("Requirements");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Messaging.Conversation", b =>

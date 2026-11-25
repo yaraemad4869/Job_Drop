@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using JobDrop.Application.Common;
 using Microsoft.AspNetCore.Http;
 

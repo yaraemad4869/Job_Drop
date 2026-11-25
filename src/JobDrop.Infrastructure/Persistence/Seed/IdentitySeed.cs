@@ -1,49 +1,52 @@
-using JobDrop.Domain.Entities.Identity;
+﻿using JobDrop.Domain.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 
 namespace JobDrop.Infrastructure.Persistence.Seed;
 
 public static class IdentitySeed
 {
-    public static async Task SeedRolesAndAdminAsync(IServiceProvider services)
+    public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
-        using var scope = services.CreateScope();
-        var sp = scope.ServiceProvider;
-        var logger = sp.GetRequiredService<ILogger<ApplicationDbContext>>();
-        var roleManager = sp.GetRequiredService<RoleManager<AppRole>>();
-        var userManager = sp.GetRequiredService<UserManager<AppUser>>();
+        // Use ILoggerFactory to avoid CS0718 (static types cannot be used as type arguments)
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger("IdentitySeed");
+        
+        var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
 
-        var roles = new[] { "JobSeeker", "CompanyOwner", "CompanyMember", "PlatformAdmin" };
-        foreach (var role in roles)
+        string[] roleNames = { "Admin", "Company", "JobSeeker" };
+
+        foreach (var roleName in roleNames)
         {
-            if (!await roleManager.RoleExistsAsync(role))
+            if (!await roleManager.RoleExistsAsync(roleName))
             {
-                var result = await roleManager.CreateAsync(new AppRole { Name = role, NormalizedName = role.ToUpperInvariant() });
-                if (!result.Succeeded)
-                    logger.LogWarning("Failed to create role {Role}: {Errors}", role, string.Join(',', result.Errors.Select(e => e.Description)));
+                await roleManager.CreateAsync(new IdentityRole(roleName));
+                logger.LogInformation("Role '{Role}' created.", roleName);
             }
         }
 
-        const string adminEmail = "admin@jobdrop.local";
-        const string adminPassword = "Admin@12345678";
-        if (await userManager.FindByEmailAsync(adminEmail) is null)
+        // Seed default admin user
+        var adminEmail = "admin@jobdrop.local";
+        if (await userManager.FindByEmailAsync(adminEmail) == null)
         {
-            var admin = new AppUser
+            var adminUser = new AppUser
             {
-                Email = adminEmail,
                 UserName = adminEmail,
-                Handle = "platform_admin",
-                EmailConfirmed = true,
-                LockoutEnabled = true
+                Email = adminEmail,
+                Handle = "admin",
+                IsActive = true,
+                EmailConfirmed = true
             };
-            var result = await userManager.CreateAsync(admin, adminPassword);
+
+            var result = await userManager.CreateAsync(adminUser, "Admin@12345");
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(admin, "PlatformAdmin");
-                logger.LogInformation("Seeded PlatformAdmin user: {Email}", adminEmail);
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+                logger.LogInformation("Default admin user created.");
             }
         }
     }

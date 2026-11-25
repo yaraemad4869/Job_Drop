@@ -1,4 +1,4 @@
-using JobDrop.Domain.Entities.Drops;
+﻿using JobDrop.Domain.Entities.Drops;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,11 +8,11 @@ public sealed class DropLedgerEntryConfiguration : IEntityTypeConfiguration<Drop
 {
     public void Configure(EntityTypeBuilder<DropLedgerEntry> builder)
     {
-        builder.ToTable("DropLedgerEntries");
+        builder.ToTable("drop_ledger_entries");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
-        builder.Property(x => x.ReasonCode).HasMaxLength(100).IsRequired();
-        builder.Property(x => x.IdempotencyKey).HasMaxLength(200).IsRequired();
+        
+        builder.Property(x => x.IdempotencyKey).HasMaxLength(100).IsRequired();
         builder.HasIndex(x => x.IdempotencyKey).IsUnique();
         builder.HasIndex(x => new { x.CandidateProfileId, x.CreatedAtUtc });
     }

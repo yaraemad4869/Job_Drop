@@ -1,64 +1,82 @@
-using JobDrop.Application.Features.Auth.Commands;
+﻿using JobDrop.Application.Features.Auth.Commands;
 using JobDrop.Application.Features.Auth.DTOs;
-using JobDrop.Application.Features.Auth.Queries;
-using Microsoft.AspNetCore.Authorization;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JobDrop.WebApi.Controllers.v1.Auth;
 
+[ApiController]
 [Route("api/v1/auth")]
-public sealed class AuthController : ApiControllerBase
+public sealed class AuthController : ControllerBase
 {
+    private readonly ISender _sender;
+
+    public AuthController(ISender sender)
+    {
+        _sender = sender;
+    }
+
     [HttpPost("register/candidate")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
-    public async Task<IActionResult> RegisterCandidate([FromBody] RegisterCandidateRequest request, CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RegisterCandidate([FromBody] RegisterCandidateRequest request, CancellationToken cancellationToken)
     {
-        var response = await Mediator.Send(new RegisterCandidateCommand(request.Email, request.Password, request.Handle, request.FullName), ct);
-        return CreatedAtAction(nameof(Login), new { }, response);
+        var command = new RegisterCandidateCommand(
+            Email: request.Email,
+            Password: request.Password,
+            Handle: request.Handle,
+            FullName: request.FullName,
+            Headline: request.Headline);
+
+        var result = await _sender.Send(command, cancellationToken);
+        return CreatedAtAction(nameof(RegisterCandidate), new { handle = result.Handle }, result);
     }
 
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        var response = await Mediator.Send(new LoginCommand(request.Email, request.Password, Request.Headers.UserAgent.ToString()), ct);
-        return Ok(response);
+        var command = new LoginCommand(request.Email, request.Password, request.DeviceInfo);
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
     }
 
     [HttpPost("refresh")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        var response = await Mediator.Send(new RefreshTokenCommand(request.RefreshToken, Request.Headers.UserAgent.ToString()), ct);
-        return Ok(response);
+        var command = new RefreshTokenCommand(request.RefreshToken, request.AccessToken);
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
     }
 
-    [Authorize]
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request, CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken)
     {
-        await Mediator.Send(new LogoutCommand(request.RefreshToken), ct);
-        return NoContent();
-    }
-
-    [Authorize]
-    [HttpPost("logout-all")]
-    public async Task<IActionResult> LogoutAll(CancellationToken ct)
-    {
-        await Mediator.Send(new LogoutAllCommand(), ct);
+        var command = new LogoutCommand(request.RefreshToken);
+        await _sender.Send(command, cancellationToken);
         return NoContent();
     }
 }
 
-[Route("api/v1/me")]
-public sealed class MeController : ApiControllerBase
-{
-    [Authorize]
-    [HttpGet("bootstrap")]
-    [ProducesResponseType(typeof(BootstrapResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Bootstrap(CancellationToken ct)
-    {
-        var response = await Mediator.Send(new BootstrapQuery(), ct);
-        return Ok(response);
-    }
-}
+public sealed record RegisterCandidateRequest(
+    string Email,
+    string Password,
+    string Handle,
+    string FullName,
+    string? Headline);
+
+public sealed record LoginRequest(
+    string Email,
+    string Password,
+    string? DeviceInfo);
+
+public sealed record RefreshTokenRequest(
+    string RefreshToken,
+    string AccessToken);
+
+public sealed record LogoutRequest(
+    string RefreshToken);

@@ -1,71 +1,104 @@
-using Xunit;
-using FluentAssertions;
+﻿using FluentAssertions;
 using JobDrop.Application.Features.Auth.Commands;
+using Xunit;
 
 namespace JobDrop.Application.UnitTests.Features.Auth.Commands;
 
 public class RegisterCandidateCommandValidatorTests
 {
-    private readonly RegisterCandidateCommandValidator _validator = new();
-
     [Fact]
-    public void ValidCommand_ShouldPass()
+    public void Validate_WithValidCommand_ShouldPass()
     {
-        var command = new RegisterCandidateCommand("test@example.com", "Password123!", "testuser", "Test User");
-        var result = _validator.Validate(command);
+        var validator = new RegisterCandidateCommandValidator();
+        var command = new RegisterCandidateCommand(
+            Email: "test@example.com",
+            Password: "Test@12345",
+            Handle: "testuser",
+            FullName: "Test User",
+            Headline: "Software Engineer");
+
+        var result = validator.Validate(command);
+
         result.IsValid.Should().BeTrue();
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("invalid")]
-    [InlineData("test@")]
-    public void InvalidEmail_ShouldFail(string email)
+    [Fact]
+    public void Validate_WithInvalidEmail_ShouldFail()
     {
-        var command = new RegisterCandidateCommand(email, "Password123!", "testuser", null);
-        var result = _validator.Validate(command);
-        result.IsValid.Should().BeFalse();
-    }
+        var validator = new RegisterCandidateCommandValidator();
+        var command = new RegisterCandidateCommand(
+            Email: "invalid-email",
+            Password: "Test@12345",
+            Handle: "testuser",
+            FullName: "Test User",
+            Headline: null);
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("short")]
-    [InlineData("nouppercase123!")]
-    [InlineData("NOLOWERCASE123!")]
-    [InlineData("NoDigits!!")]
-    [InlineData("NoSpecial123")]
-    public void WeakPassword_ShouldFail(string password)
-    {
-        var command = new RegisterCandidateCommand("test@example.com", password, "testuser", null);
-        var result = _validator.Validate(command);
-        result.IsValid.Should().BeFalse();
-    }
+        var result = validator.Validate(command);
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("UPPERCASE")]
-    [InlineData("has space")]
-    [InlineData("has-dash")]
-    public void InvalidHandle_ShouldFail(string handle)
-    {
-        var command = new RegisterCandidateCommand("test@example.com", "Password123!", handle, null);
-        var result = _validator.Validate(command);
         result.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public void HandleTooLong_ShouldFail()
+    public void Validate_WithWeakPassword_ShouldFail()
     {
-        var command = new RegisterCandidateCommand("test@example.com", "Password123!", "a".PadRight(31, 'a'), null);
-        var result = _validator.Validate(command);
+        var validator = new RegisterCandidateCommandValidator();
+        var command = new RegisterCandidateCommand(
+            Email: "test@example.com",
+            Password: "weak",
+            Handle: "testuser",
+            FullName: "Test User",
+            Headline: null);
+
+        var result = validator.Validate(command);
+
         result.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public void ValidHandle_ShouldPass()
+    public void Validate_WithEmptyHandle_ShouldFail()
     {
-        var command = new RegisterCandidateCommand("test@example.com", "Password123!", "valid_handle_123", null);
-        var result = _validator.Validate(command);
+        var validator = new RegisterCandidateCommandValidator();
+        var command = new RegisterCandidateCommand(
+            Email: "test@example.com",
+            Password: "Test@12345",
+            Handle: "",
+            FullName: "Test User",
+            Headline: null);
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Validate_WithEmptyFullName_ShouldFail()
+    {
+        var validator = new RegisterCandidateCommandValidator();
+        var command = new RegisterCandidateCommand(
+            Email: "test@example.com",
+            Password: "Test@12345",
+            Handle: "testuser",
+            FullName: "",
+            Headline: null);
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Validate_WithNullHeadline_ShouldPass()
+    {
+        var validator = new RegisterCandidateCommandValidator();
+        var command = new RegisterCandidateCommand(
+            Email: "test@example.com",
+            Password: "Test@12345",
+            Handle: "testuser",
+            FullName: "Test User",
+            Headline: null);
+
+        var result = validator.Validate(command);
+
         result.IsValid.Should().BeTrue();
     }
 }

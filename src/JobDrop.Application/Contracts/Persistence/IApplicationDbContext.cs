@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using JobDrop.Domain.Entities.Billing;
 using JobDrop.Domain.Entities.Candidates;
 using JobDrop.Domain.Entities.Companies;
@@ -10,7 +10,7 @@ using JobDrop.Domain.Entities.Messaging;
 using JobDrop.Domain.Entities.Observability;
 using JobDrop.Domain.Entities.Reference;
 using JobDrop.Domain.Entities.ReverseDrops;
-using JobDrop.Domain.Entities.Sla;
+using JobDrop.Domain.Entities.Drops;
 using JobDrop.Domain.Entities.Storage;
 using DropApplication = JobDrop.Domain.Entities.Drops.Application;
 using DropWalletBalance = JobDrop.Domain.Entities.Drops.DropWalletBalance;

@@ -1,46 +1,34 @@
-using Xunit;
-using FluentAssertions;
-using JobDrop.Application.Common;
+﻿using FluentAssertions;
 using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Application.Features.Companies.Commands;
-using JobDrop.Domain.Exceptions;
 using NSubstitute;
+using Xunit;
 
 namespace JobDrop.Application.UnitTests.Features.Companies.Commands;
 
-// NOTE: Membership/authorization checks hit the database and are covered by Integration Tests.
 public class CreateCompanyOfficeHandlerTests
 {
-    private readonly IApplicationDbContext _db;
-    private readonly ICurrentUser _currentUser;
-    private readonly CreateCompanyOfficeHandler _handler;
-
-    public CreateCompanyOfficeHandlerTests()
-    {
-        _db = Substitute.For<IApplicationDbContext>();
-        _currentUser = Substitute.For<ICurrentUser>();
-        _handler = new CreateCompanyOfficeHandler(_db, _currentUser);
-    }
-
     [Fact]
-    public async Task Handle_UnauthenticatedUser_ShouldThrowForbiddenAccessException()
+    public async Task Handle_WithValidCommand_ShouldCreateOffice()
     {
-        _currentUser.UserId.Returns((Guid?)null);
-        var command = new CreateCompanyOfficeCommand(Guid.NewGuid(), "HQ", 0, 30.0444, 31.2357, 500, null);
+        // Arrange
+        var context = Substitute.For<IApplicationDbContext>();
+        var handler = new CreateCompanyOfficeHandler(context);
 
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
+        var command = new CreateCompanyOfficeCommand(
+            CompanyId: Guid.NewGuid(),
+            Nickname: "Main Office",
+            OfficeType: "HQ",
+            Latitude: 30.0444,
+            Longitude: 31.2357,
+            GeofenceRadiusMeters: 500,
+            TransitAnchorText: "Near Metro");
 
-        await act.Should().ThrowAsync<ForbiddenAccessException>();
-    }
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
 
-    [Fact]
-    public async Task Handle_UnauthenticatedUser_ShouldNotPersist()
-    {
-        _currentUser.UserId.Returns((Guid?)null);
-        var command = new CreateCompanyOfficeCommand(Guid.NewGuid(), "HQ", 0, 30.0444, 31.2357, 500, null);
-
-        try { await _handler.Handle(command, CancellationToken.None); } catch { }
-
-        await _db.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        // Assert
+        result.Should().NotBeEmpty();
+        await context.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

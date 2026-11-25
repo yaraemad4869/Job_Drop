@@ -1,4 +1,4 @@
-namespace JobDrop.Application.Common;
+﻿namespace JobDrop.Application.Common;
 
 public interface ICurrentUser
 {

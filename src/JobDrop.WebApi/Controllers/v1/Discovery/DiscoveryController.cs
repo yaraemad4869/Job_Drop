@@ -1,27 +1,49 @@
-using JobDrop.Application.Features.Discovery.DTOs;
+﻿using JobDrop.Application.Common;
 using JobDrop.Application.Features.Discovery.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JobDrop.WebApi.Controllers.v1.Discovery;
 
-[Authorize(Policy = "JobSeeker")]
+[ApiController]
 [Route("api/v1/discovery")]
-public sealed class DiscoveryController : ApiControllerBase
+public sealed class DiscoveryController : ControllerBase
 {
-    [HttpPost("search")]
-    [ProducesResponseType(typeof(SpatialSearchResult), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Search([FromBody] SpatialSearchCommand payload, CancellationToken ct)
+    private readonly ISender _sender;
+    private readonly ICurrentUser _currentUser;
+
+    public DiscoveryController(ISender sender, ICurrentUser currentUser)
     {
-        var result = await Mediator.Send(new SpatialSearchQuery(payload), ct);
-        return Ok(result);
+        _sender = sender;
+        _currentUser = currentUser;
     }
 
-    [HttpGet("searches/{searchId}/jobs")]
-    [ProducesResponseType(typeof(List<JobCardDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetSearchJobs(string searchId, string? cursor, CancellationToken ct)
+    /// <summary>
+    /// Search for jobs within a specific radius from a given location (Haversine Formula).
+    /// </summary>
+    [HttpPost("search")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(SpatialSearchResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SearchJobs([FromBody] SpatialSearchRequest request, CancellationToken cancellationToken)
     {
-        // TODO: Implement GetSearchJobsQuery with cursor pagination
-        return Ok(new List<JobCardDto>());
+        var query = new SpatialSearchQuery(
+            CandidateProfileId: _currentUser.CandidateProfileId ?? Guid.Empty,
+            Latitude: request.Latitude,
+            Longitude: request.Longitude,
+            RadiusInKm: request.RadiusInKm,
+            Page: request.Page,
+            PageSize: request.PageSize);
+
+        var result = await _sender.Send(query, cancellationToken);
+        return Ok(result);
     }
 }
+
+public sealed record SpatialSearchRequest(
+    double Latitude,
+    double Longitude,
+    double RadiusInKm,
+    int Page = 1,
+    int PageSize = 20);

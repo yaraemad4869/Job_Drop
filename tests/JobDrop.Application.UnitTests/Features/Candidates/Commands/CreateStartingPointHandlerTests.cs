@@ -1,46 +1,33 @@
-using Xunit;
-using FluentAssertions;
-using JobDrop.Application.Common;
+﻿using FluentAssertions;
 using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Application.Features.Candidates.Commands;
-using JobDrop.Domain.Exceptions;
 using NSubstitute;
+using Xunit;
 
 namespace JobDrop.Application.UnitTests.Features.Candidates.Commands;
 
-// NOTE: Database-dependent paths (ProfileNotFound, capacity limit) are covered by Integration Tests.
 public class CreateStartingPointHandlerTests
 {
-    private readonly IApplicationDbContext _db;
-    private readonly ICurrentUser _currentUser;
-    private readonly CreateStartingPointHandler _handler;
-
-    public CreateStartingPointHandlerTests()
-    {
-        _db = Substitute.For<IApplicationDbContext>();
-        _currentUser = Substitute.For<ICurrentUser>();
-        _handler = new CreateStartingPointHandler(_db, _currentUser);
-    }
-
     [Fact]
-    public async Task Handle_UnauthenticatedUser_ShouldThrowForbiddenAccessException()
+    public async Task Handle_WithValidCommand_ShouldCreateStartingPoint()
     {
-        _currentUser.UserId.Returns((Guid?)null);
-        var command = new CreateStartingPointCommand("Home", 0, 30.0444, 31.2357, true);
+        // Arrange
+        var context = Substitute.For<IApplicationDbContext>();
+        var handler = new CreateStartingPointHandler(context);
 
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
+        var command = new CreateStartingPointCommand(
+            CandidateProfileId: Guid.NewGuid(),
+            Label: "Home",
+            AnchorType: "Primary",
+            Latitude: 30.0444,
+            Longitude: 31.2357,
+            IsActiveOrigin: true);
 
-        await act.Should().ThrowAsync<ForbiddenAccessException>();
-    }
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
 
-    [Fact]
-    public async Task Handle_UnauthenticatedUser_ShouldNotPersist()
-    {
-        _currentUser.UserId.Returns((Guid?)null);
-        var command = new CreateStartingPointCommand("Home", 0, 30.0444, 31.2357, true);
-
-        try { await _handler.Handle(command, CancellationToken.None); } catch { }
-
-        await _db.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        // Assert
+        result.Should().NotBeEmpty();
+        await context.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

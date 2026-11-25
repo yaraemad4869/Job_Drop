@@ -1,41 +1,16 @@
-namespace JobDrop.Domain.ValueObjects;
+﻿namespace JobDrop.Domain.ValueObjects;
 
-public sealed class GeoPoint : ValueObject
+public sealed record GeoPoint(double Latitude, double Longitude)
 {
-    public const int Wgs84Srid = 4326;
-    public const double MinLatitude = -90.0;
-    public const double MaxLatitude = 90.0;
-    public const double MinLongitude = -180.0;
-    public const double MaxLongitude = 180.0;
-
-    public double Latitude { get; }
-    public double Longitude { get; }
-    public int SRID { get; }
-
-    public GeoPoint(double latitude, double longitude, int srid = Wgs84Srid)
+    public GeoPoint() : this(0.0, 0.0) { }
+    
+    public void Validate()
     {
-        if (double.IsNaN(latitude) || double.IsInfinity(latitude))
-            throw new ArgumentException("Latitude cannot be NaN or Infinity.", nameof(latitude));
-        if (double.IsNaN(longitude) || double.IsInfinity(longitude))
-            throw new ArgumentException("Longitude cannot be NaN or Infinity.", nameof(longitude));
-        if (latitude < MinLatitude || latitude > MaxLatitude)
-            throw new ArgumentOutOfRangeException(nameof(latitude), $"Latitude must be between {MinLatitude} and {MaxLatitude}.");
-        if (longitude < MinLongitude || longitude > MaxLongitude)
-            throw new ArgumentOutOfRangeException(nameof(longitude), $"Longitude must be between {MinLongitude} and {MaxLongitude}.");
-        if (latitude == 0 && longitude == 0)
-            throw new ArgumentException("Null Island (0,0) coordinates are not allowed.");
-
-        Latitude = latitude;
-        Longitude = longitude;
-        SRID = srid;
+        if (Latitude < -90 || Latitude > 90)
+            throw new ArgumentOutOfRangeException(nameof(Latitude), "Latitude must be between -90 and 90.");
+        if (Longitude < -180 || Longitude > 180)
+            throw new ArgumentOutOfRangeException(nameof(Longitude), "Longitude must be between -180 and 180.");
+        if (Latitude == 0.0 && Longitude == 0.0)
+            throw new ArgumentException("Coordinates cannot be (0,0).");
     }
-
-    protected override IEnumerable<object?> GetEqualityComponents()
-    {
-        yield return Latitude;
-        yield return Longitude;
-        yield return SRID;
-    }
-
-    public override string ToString() => $"POINT({Longitude} {Latitude})";
 }

@@ -1,0 +1,34 @@
+﻿services:
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: jobdrop_postgis
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: JobDrop
+    ports:
+      - "5433:5432"
+    volumes:
+      - jobdrop_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: jobdrop_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - jobdrop_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  jobdrop_pgdata:
+  jobdrop_redis_data:
