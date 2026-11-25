@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/JobDrop.Application/JobDrop.Application.csproj" />
+    <Project Path="src/JobDrop.Domain/JobDrop.Domain.csproj" />
+    <Project Path="src/JobDrop.Infrastructure/JobDrop.Infrastructure.csproj" />
+    <Project Path="src/JobDrop.WebApi/JobDrop.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/JobDrop.Application.UnitTests/JobDrop.Application.UnitTests.csproj" />
+    <Project Path="tests/JobDrop.Domain.UnitTests/JobDrop.Domain.UnitTests.csproj" />
+    <Project Path="tests/JobDrop.IntegrationTests/JobDrop.IntegrationTests.csproj" />
+  </Folder>
+</Solution>

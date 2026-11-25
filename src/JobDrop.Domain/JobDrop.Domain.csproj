@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>JobDrop.Domain</RootNamespace>
+    <AssemblyName>JobDrop.Domain</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- FrameworkReference needed for IdentityUser<T> base class -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>
