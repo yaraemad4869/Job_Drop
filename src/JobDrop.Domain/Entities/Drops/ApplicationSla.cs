@@ -34,4 +34,6 @@ public sealed class ApplicationSla : BaseEntity
     {
         Status = SlaStatus.ExpiredRefunded;
     }
+    public byte[] RowVersion { get; private set; } = null!;
 }
+

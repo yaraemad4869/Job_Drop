@@ -8,4 +8,5 @@ public interface ICurrentUser
     bool IsAuthenticated { get; }
     IReadOnlyCollection<string> Roles { get; }
     bool IsInRole(string role);
+    Guid? CandidateProfileId { get; }
 }

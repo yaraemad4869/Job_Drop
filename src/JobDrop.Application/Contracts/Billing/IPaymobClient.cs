@@ -1,4 +1,4 @@
-namespace JobDrop.Application.Contracts.Billing;
+﻿namespace JobDrop.Application.Contracts.Billing;
 
 public sealed record PaymobCheckoutRequest(
     long AmountCents,
@@ -15,4 +15,5 @@ public sealed record PaymobCheckoutResponse(
 public interface IPaymobClient
 {
     Task<PaymobCheckoutResponse> CreateCheckoutAsync(PaymobCheckoutRequest request, CancellationToken cancellationToken = default);
+    Task<bool> VerifyHmacAsync(string payload, string signature, string secret, CancellationToken ct);
 }

@@ -1,4 +1,4 @@
-using JobDrop.Domain.Common;
+﻿using JobDrop.Domain.Common;
 using JobDrop.Domain.Enums;
 
 namespace JobDrop.Domain.Entities.Billing;
@@ -17,4 +17,22 @@ public sealed class Payment : ConcurrentAuditableEntity
     public PaymentStatus Status { get; set; } = PaymentStatus.Created;
     public string? FailureReason { get; set; }
     public DateTimeOffset? PaidAtUtc { get; set; }
+
+    public void MarkPaid(string providerTransactionId)
+    {
+        Status = JobDrop.Domain.Enums.PaymentStatus.Paid;
+        ProviderTransactionId = providerTransactionId;
+    }
+
+    public void MarkFailed()
+    {
+        Status = JobDrop.Domain.Enums.PaymentStatus.Failed;
+    }
+
+    public void SetProviderIds(string providerOrderId, string providerIntentionId)
+    {
+        ProviderOrderId = providerOrderId;
+        ProviderIntentionId = providerIntentionId;
+        Status = JobDrop.Domain.Enums.PaymentStatus.ProviderPending;
+    }
 }

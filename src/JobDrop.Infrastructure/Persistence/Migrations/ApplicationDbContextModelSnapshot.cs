@@ -313,9 +313,18 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PreferredWorkModes")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
 
                     b.Property<string>("SharingProtocolJson")
                         .HasMaxLength(4000)
@@ -1168,6 +1177,12 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("RespondedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
                     b.Property<DateTime>("StartedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -1290,6 +1305,12 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("DailyResetAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
 
                     b.Property<int>("SpecialBalance")
                         .HasColumnType("integer");
@@ -1626,6 +1647,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int>("CurrentApplicantsCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DailyIntakeCap")
                         .HasColumnType("integer");
 
                     b.Property<int>("DailyIntakeLimit")
@@ -2047,6 +2071,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Channel")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("DeadLetteredAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -2069,6 +2096,12 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("RetryCount")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -2114,7 +2147,6 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("JobDrop.Domain.Entities.ReverseDrops.ReverseDrop", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CandidateProfileId")
@@ -2158,7 +2190,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
                         .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.Property<string>("SalaryCurrency")
@@ -2182,17 +2216,22 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CandidateProfileId");
+
                     b.HasIndex("CompanyId");
+
+                    b.HasIndex("ExpiresAtUtc");
 
                     b.HasIndex("JobId");
 
-                    b.ToTable("ReverseDrops");
+                    b.HasIndex("Status");
+
+                    b.ToTable("reverse_drops", (string)null);
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.ReverseDrops.ReverseDropPool", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")
@@ -2221,7 +2260,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
                         .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.Property<int>("TopUpRemaining")
@@ -2229,9 +2270,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("CompanyId", "CycleStartUtc");
 
-                    b.ToTable("ReverseDropPools");
+                    b.ToTable("reverse_drop_pools", (string)null);
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Sla.ApplicationSla", b =>

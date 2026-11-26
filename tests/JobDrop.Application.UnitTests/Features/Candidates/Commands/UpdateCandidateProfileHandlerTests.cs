@@ -1,90 +1,107 @@
-﻿using JobDrop.Application.UnitTests;
-using FluentAssertions;
+﻿using JobDrop.Infrastructure.Persistence;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using JobDrop.Application.Features.Candidates.Commands;
+using JobDrop.Application.Features.Candidates.Handlers;
 using JobDrop.Domain.Entities.Candidates;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace JobDrop.Application.UnitTests.Features.Candidates.Commands;
 
-public class UpdateCandidateProfileHandlerTests : IDisposable
+public sealed class UpdateCandidateProfileHandlerTests
 {
-    private readonly TestDbContext _context;
-    private readonly UpdateCandidateProfileHandler _handler;
+    private readonly DbContextOptions<ApplicationDbContext> _options;
 
     public UpdateCandidateProfileHandlerTests()
     {
-        var options = new DbContextOptionsBuilder<TestDbContext>()
+        _options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-
-        _context = new TestDbContext(options);
-        _handler = new UpdateCandidateProfileHandler(_context);
     }
 
     [Fact]
     public async Task Handle_WithValidCommand_ShouldUpdateProfile()
     {
-        // Arrange
-        var existingProfile = new CandidateProfile(Guid.NewGuid(), "Original Name", "Original Title");
-        _context.CandidateProfiles.Add(existingProfile);
-        await _context.SaveChangesAsync();
+        // Arrange - Use factory method to respect encapsulation
+        var userId = Guid.NewGuid();
+        var profileId = Guid.NewGuid();
+        var rowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
 
-        var command = new UpdateCandidateProfileCommand(
-            CandidateProfileId: existingProfile.Id,
-            FullName: "Updated Name",
-            Headline: "Senior Developer",
-            Summary: "Experienced developer",
-            DropThemeCode: "dark");
+        using var context = new ApplicationDbContext(_options);
+        var profile = CandidateProfile.CreateForTest(
+            userId: userId,
+            fullName: "Test User",
+            id: profileId,
+            headline: "Old Headline",
+            summary: "Old Summary",
+            rowVersion: rowVersion);
+        
+        context.CandidateProfiles.Add(profile);
+        await context.SaveChangesAsync();
+
+        var command = new UpdateCandidateProfileCommand(profileId, "New Headline", "New Summary");
+        var handler = new UpdateCandidateProfileHandler(context);
 
         // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        
-        var updatedProfile = await _context.CandidateProfiles
-            .FirstOrDefaultAsync(p => p.Id == existingProfile.Id);
-        
-        updatedProfile.Should().NotBeNull();
-        updatedProfile!.FullName.Should().Be("Updated Name");
-        updatedProfile.Headline.Should().Be("Senior Developer");
-        updatedProfile.Summary.Should().Be("Experienced developer");
-        updatedProfile.DropThemeCode.Should().Be("dark");
+        Assert.True(result);
+        var updatedProfile = await context.CandidateProfiles.FindAsync(profileId);
+        Assert.NotNull(updatedProfile);
+        Assert.Equal("New Headline", updatedProfile.Headline);
+        Assert.Equal("New Summary", updatedProfile.Summary);
     }
 
     [Fact]
     public async Task Handle_WithPartialUpdate_ShouldUpdateOnlyProvidedFields()
     {
         // Arrange
-        var existingProfile = new CandidateProfile(Guid.NewGuid(), "Original Name", "Original Title");
-        _context.CandidateProfiles.Add(existingProfile);
-        await _context.SaveChangesAsync();
+        var userId = Guid.NewGuid();
+        var profileId = Guid.NewGuid();
+        var rowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
 
-        var command = new UpdateCandidateProfileCommand(
-            CandidateProfileId: existingProfile.Id,
-            FullName: null,
-            Headline: "Updated Headline Only",
-            Summary: null,
-            DropThemeCode: null);
+        using var context = new ApplicationDbContext(_options);
+        var profile = CandidateProfile.CreateForTest(
+            userId: userId,
+            fullName: "Test User",
+            id: profileId,
+            headline: "Old Headline",
+            summary: "Old Summary",
+            rowVersion: rowVersion);
+        
+        context.CandidateProfiles.Add(profile);
+        await context.SaveChangesAsync();
+
+        // Update only Headline
+        var command = new UpdateCandidateProfileCommand(profileId, "New Headline", null);
+        var handler = new UpdateCandidateProfileHandler(context);
 
         // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        
-        var updatedProfile = await _context.CandidateProfiles
-            .FirstOrDefaultAsync(p => p.Id == existingProfile.Id);
-        
-        updatedProfile.Should().NotBeNull();
-        updatedProfile!.FullName.Should().Be("Original Name"); // Unchanged
-        updatedProfile.Headline.Should().Be("Updated Headline Only"); // Changed
-        updatedProfile.Summary.Should().BeNull();
+        Assert.True(result);
+        var updatedProfile = await context.CandidateProfiles.FindAsync(profileId);
+        Assert.NotNull(updatedProfile);
+        Assert.Equal("New Headline", updatedProfile.Headline);
+        Assert.Equal("Old Summary", updatedProfile.Summary); // Should remain unchanged
     }
 
-    public void Dispose()
+    [Fact]
+    public async Task Handle_WithNonExistentProfile_ShouldReturnFalse()
     {
-        _context.Dispose();
+        // Arrange
+        using var context = new ApplicationDbContext(_options);
+        var command = new UpdateCandidateProfileCommand(Guid.NewGuid(), "New Headline", null);
+        var handler = new UpdateCandidateProfileHandler(context);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.False(result);
     }
 }

@@ -1,60 +1,98 @@
-using Xunit;
-using FluentAssertions;
 using JobDrop.Domain.Services;
+using Xunit;
 
 namespace JobDrop.Domain.UnitTests.Services;
 
-public class MatchScoringEngineTests
+public sealed class MatchScoringEngineTests
 {
-    private readonly MatchScoringEngine _engine = new();
-
     [Fact]
-    public void ComputeCompositeScore_AllPerfect_ShouldReturn100()
+    public void CalculateMatchScore_AllPerfect_Returns100()
     {
-        var score = _engine.ComputeCompositeScore(1.0m, 0, 3600, 1.0m, 1.0m);
-        score.Should().Be(100);
+        var engine = new MatchScoringEngine();
+
+        var score = engine.CalculateMatchScore(
+            semanticSimilarity: 1.0,
+            commuteEfficiency: 1.0,
+            experienceMatch: 1.0,
+            compensationOverlap: 1.0);
+
+        Assert.Equal(100, score);
     }
 
     [Fact]
-    public void ComputeCompositeScore_AllZero_ShouldReturn0()
+    public void CalculateMatchScore_AllZero_Returns0()
     {
-        var score = _engine.ComputeCompositeScore(0.0m, 3600, 3600, 0.0m, 0.0m);
-        score.Should().Be(0);
+        var engine = new MatchScoringEngine();
+
+        var score = engine.CalculateMatchScore(
+            semanticSimilarity: 0.0,
+            commuteEfficiency: 0.0,
+            experienceMatch: 0.0,
+            compensationOverlap: 0.0);
+
+        Assert.Equal(0, score);
     }
 
     [Fact]
-    public void ComputeCompositeScore_PartialScores_ShouldCalculateWeightedAverage()
+    public void CalculateMatchScore_WeightsCorrectly()
     {
-        var score = _engine.ComputeCompositeScore(0.8m, 1800, 3600, 0.6m, 0.9m);
-        score.Should().BeGreaterThan(0);
-        score.Should().BeLessThan(100);
+        var engine = new MatchScoringEngine();
+
+        // 0.35 * 1.0 + 0.30 * 0.5 + 0.20 * 0.5 + 0.15 * 0.5 = 0.35 + 0.15 + 0.10 + 0.075 = 0.675
+        var score = engine.CalculateMatchScore(
+            semanticSimilarity: 1.0,
+            commuteEfficiency: 0.5,
+            experienceMatch: 0.5,
+            compensationOverlap: 0.5);
+
+        Assert.Equal(68, score); // 0.675 * 100 = 67.5 -> rounds to 68
     }
 
     [Fact]
-    public void ComputeCompositeScore_CommuteExceedsMax_ShouldClampToZero()
+    public void CalculateCommuteEfficiency_AtMaxDuration_Returns0()
     {
-        var score = _engine.ComputeCompositeScore(1.0m, 7200, 3600, 1.0m, 1.0m);
-        score.Should().BeLessThan(100);
+        var engine = new MatchScoringEngine();
+
+        var efficiency = engine.CalculateCommuteEfficiency(
+            durationSeconds: 3600,
+            maxDurationSeconds: 3600);
+
+        Assert.Equal(0.0, efficiency);
     }
 
     [Fact]
-    public void ComputeCompositeScore_NegativeScores_ShouldClampToZero()
+    public void CalculateCommuteEfficiency_AtZeroDuration_Returns1()
     {
-        var score = _engine.ComputeCompositeScore(-0.5m, 0, 3600, -0.3m, -0.2m);
-        score.Should().Be(30);
+        var engine = new MatchScoringEngine();
+
+        var efficiency = engine.CalculateCommuteEfficiency(
+            durationSeconds: 0,
+            maxDurationSeconds: 3600);
+
+        Assert.Equal(1.0, efficiency);
     }
 
     [Fact]
-    public void ComputeCompositeScore_ZeroMaxCommute_ShouldTreatAsPerfect()
+    public void CalculateSkillMatch_AllMatched_Returns1()
     {
-        var score = _engine.ComputeCompositeScore(1.0m, 1000, 0, 1.0m, 1.0m);
-        score.Should().Be(100);
+        var engine = new MatchScoringEngine();
+        var required = new[] { "C#", ".NET", "SQL" };
+        var candidate = new[] { "C#", ".NET", "SQL", "JavaScript" };
+
+        var match = engine.CalculateSkillMatch(required, candidate);
+
+        Assert.Equal(1.0, match);
     }
 
     [Fact]
-    public void ComputeCompositeScore_AllNegativeAndLongCommute_ShouldReturnZero()
+    public void CalculateSkillMatch_NoneMatched_Returns0()
     {
-        var score = _engine.ComputeCompositeScore(-0.5m, 3600, 3600, -0.3m, -0.2m);
-        score.Should().Be(0);
+        var engine = new MatchScoringEngine();
+        var required = new[] { "C#", ".NET", "SQL" };
+        var candidate = new[] { "JavaScript", "Python" };
+
+        var match = engine.CalculateSkillMatch(required, candidate);
+
+        Assert.Equal(0.0, match);
     }
 }

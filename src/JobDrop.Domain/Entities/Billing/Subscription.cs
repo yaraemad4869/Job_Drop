@@ -1,4 +1,4 @@
-using JobDrop.Domain.Common;
+﻿using JobDrop.Domain.Common;
 using JobDrop.Domain.Enums;
 
 namespace JobDrop.Domain.Entities.Billing;
@@ -14,4 +14,9 @@ public sealed class Subscription : BaseEntity
     public bool AutoRenew { get; set; } = true;
     public DateTimeOffset? CancelledAtUtc { get; set; }
     public string? ProviderSubscriptionId { get; set; }
+
+    public void Activate()
+    {
+        Status = JobDrop.Domain.Enums.SubscriptionStatus.Active;
+    }
 }

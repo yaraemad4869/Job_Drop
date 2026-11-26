@@ -33,4 +33,16 @@ public sealed class CurrentUserService : ICurrentUser
         ?? (IReadOnlyCollection<string>)Array.Empty<string>();
 
     public bool IsInRole(string role) => Roles.Contains(role);
+    public Guid? CandidateProfileId
+    {
+        get
+        {
+            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst("candidate_profile_id");
+            if (claim != null && Guid.TryParse(claim.Value, out var profileId))
+            {
+                return profileId;
+            }
+            return null;
+        }
+    }
 }

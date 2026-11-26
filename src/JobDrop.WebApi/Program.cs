@@ -1,4 +1,4 @@
-﻿using JobDrop.Application;
+using JobDrop.Application;
 using JobDrop.Application.Common;
 using JobDrop.Application.Contracts.Identity;
 using JobDrop.Domain.Entities.Identity;
@@ -68,7 +68,7 @@ try
         {
             Title = "JobDrop API",
             Version = "v1",
-            Description = "API for the JobDrop platform - Sprint 2 & 3 Features"
+            Description = "API for the JobDrop platform - Sprint"
         });
 
         c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -113,6 +113,35 @@ try
     // Authentication & Authorization
     builder.Services.AddAuthentication();
     builder.Services.AddAuthorization();
+
+
+// =====================================================================
+// MISSING SERVICE REGISTRATIONS (Added by Fixer)
+// =====================================================================
+
+// Domain Services
+builder.Services.AddSingleton<JobDrop.Domain.Services.DropWalletPolicy>();
+builder.Services.AddSingleton<JobDrop.Domain.Services.SlaDeadlineCalculator>();
+builder.Services.AddSingleton<JobDrop.Domain.Services.MatchScoringEngine>();
+builder.Services.AddSingleton<JobDrop.Domain.Services.CandidateCodeGenerator>();
+builder.Services.AddSingleton<JobDrop.Domain.Services.BlindDossierProjector>();
+
+// Infrastructure Services
+builder.Services.AddTransient<JobDrop.Application.Contracts.Billing.IPaymobClient, JobDrop.Infrastructure.Billing.PaymobClient>();
+builder.Services.AddTransient<JobDrop.Application.Contracts.Billing.IEntitlementResolver, JobDrop.Infrastructure.Billing.EntitlementResolver>();
+builder.Services.AddTransient<JobDrop.Application.Contracts.Notifications.IEmailSender, JobDrop.Infrastructure.Notifications.EmailSender>();
+builder.Services.AddTransient<JobDrop.Application.Contracts.Storage.IMalwareScanner, JobDrop.Infrastructure.Storage.MalwareScanner>();
+builder.Services.AddTransient<JobDrop.Application.Contracts.Storage.IPrivateDocumentStorage, JobDrop.Infrastructure.Storage.PrivateDocumentStorage>();
+builder.Services.AddTransient<JobDrop.Application.Contracts.Persistence.IOutboxPublisher, JobDrop.Infrastructure.Notifications.OutboxPublisher>();
+
+// Background Workers
+builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.SlaExpirationRefundWorker>();
+builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.QueueDispatchWorker>();
+builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.OutboxNotificationWorker>();
+builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.PaymobReconcilerWorker>();
+builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.ReverseDropExpiryWorker>();
+builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.DocumentScanWorker>();
+builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.AccountDeletionPurgeWorker>();
 
     var app = builder.Build();
 

@@ -1,4 +1,5 @@
-﻿using JobDrop.Application.Contracts.Persistence;
+using Microsoft.EntityFrameworkCore;
+using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Domain.Entities.Candidates;
 using MediatR;
 

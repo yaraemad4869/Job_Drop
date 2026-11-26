@@ -15,5 +15,6 @@ public sealed class ApplicationSlaConfiguration : IEntityTypeConfiguration<Appli
         
         builder.HasIndex(x => x.ApplicationId).IsUnique();
         builder.HasIndex(x => new { x.Status, x.DueAtUtc });
+        builder.Property(x => x.RowVersion).IsRowVersion();
     }
 }

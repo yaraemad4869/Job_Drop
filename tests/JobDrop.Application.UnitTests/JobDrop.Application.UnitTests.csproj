@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -25,5 +25,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\JobDrop.Application\JobDrop.Application.csproj" />
     <ProjectReference Include="..\..\src\JobDrop.Domain\JobDrop.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\JobDrop.Infrastructure\JobDrop.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

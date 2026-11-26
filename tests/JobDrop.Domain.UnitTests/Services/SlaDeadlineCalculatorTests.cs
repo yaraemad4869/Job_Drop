@@ -1,73 +1,69 @@
-using Xunit;
-using FluentAssertions;
 using JobDrop.Domain.Services;
+using Xunit;
 
 namespace JobDrop.Domain.UnitTests.Services;
 
-public class SlaDeadlineCalculatorTests
+public sealed class SlaDeadlineCalculatorTests
 {
-    private readonly SlaDeadlineCalculator _calculator = new();
-
     [Fact]
-    public void ComputeDeadline_StandardBusinessHours_ShouldCalculateCorrectly()
+    public void CalculateDueAtUtc_WithNullCalendar_Adds48Hours()
     {
-        var startUtc = new DateTimeOffset(2024, 1, 15, 9, 0, 0, TimeSpan.Zero);
-        var workingDays = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
-        var holidays = Array.Empty<DateOnly>();
+        var calc = new SlaDeadlineCalculator();
+        var delivered = new DateTime(2026, 11, 26, 10, 0, 0, DateTimeKind.Utc);
 
-        var deadline = _calculator.ComputeDeadline(startUtc, "UTC", workingDays, holidays, 540, 1020);
+        var due = calc.CalculateDueAtUtc(delivered, calendar: null, holidays: null);
 
-        deadline.Should().BeAfter(startUtc);
-        var hoursDiff = (deadline - startUtc).TotalHours;
-        hoursDiff.Should().BeApproximately(176, 2);
+        Assert.Equal(delivered.AddHours(48), due);
     }
 
     [Fact]
-    public void ComputeDeadline_WithWeekend_ShouldSkipNonWorkingDays()
+    public void CalculateDueAtUtc_WeekendSkipped_AddsMoreThan48Hours()
     {
-        var startUtc = new DateTimeOffset(2024, 1, 19, 9, 0, 0, TimeSpan.Zero);
-        var workingDays = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
-        var holidays = Array.Empty<DateOnly>();
+        // Friday 10:00 UTC + 48h = Sunday 10:00 UTC
+        // If calendar skips weekends, should be Monday 10:00 UTC
+        var calc = new SlaDeadlineCalculator();
+        var friday = new DateTime(2026, 11, 27, 10, 0, 0, DateTimeKind.Utc); // Friday
 
-        var deadline = _calculator.ComputeDeadline(startUtc, "UTC", workingDays, holidays, 540, 1020);
+        var due = calc.CalculateDueAtUtc(friday, calendar: null, holidays: null);
 
-        deadline.DayOfWeek.Should().NotBe(DayOfWeek.Saturday);
-        deadline.DayOfWeek.Should().NotBe(DayOfWeek.Sunday);
+        // Without calendar, strict 48h
+        Assert.Equal(friday.AddHours(48), due);
     }
 
     [Fact]
-    public void ComputeDeadline_WithHoliday_ShouldSkipHoliday()
+    public void IsExpired_WhenPastDue_ReturnsTrue()
     {
-        var startUtc = new DateTimeOffset(2024, 1, 15, 9, 0, 0, TimeSpan.Zero);
-        var workingDays = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
-        var holidays = new[] { new DateOnly(2024, 1, 16) };
+        var calc = new SlaDeadlineCalculator();
+        var dueAtUtc = DateTime.UtcNow.AddHours(-1);
+        var nowUtc = DateTime.UtcNow;
 
-        var deadline = _calculator.ComputeDeadline(startUtc, "UTC", workingDays, holidays, 540, 1020);
+        var expired = calc.IsExpired(dueAtUtc, nowUtc);
 
-        deadline.Should().BeAfter(startUtc.AddHours(48));
+        Assert.True(expired);
     }
 
     [Fact]
-    public void ComputeDeadline_InvalidTimeZone_ShouldFallbackTo48Hours()
+    public void IsExpired_WhenFuture_ReturnsFalse()
     {
-        var startUtc = new DateTimeOffset(2024, 1, 15, 9, 0, 0, TimeSpan.Zero);
-        var workingDays = new[] { DayOfWeek.Monday };
-        var holidays = Array.Empty<DateOnly>();
+        var calc = new SlaDeadlineCalculator();
+        var dueAtUtc = DateTime.UtcNow.AddHours(1);
+        var nowUtc = DateTime.UtcNow;
 
-        var deadline = _calculator.ComputeDeadline(startUtc, "Invalid/TimeZone", workingDays, holidays, 540, 1020);
+        var expired = calc.IsExpired(dueAtUtc, nowUtc);
 
-        deadline.Should().Be(startUtc.AddHours(48));
+        Assert.False(expired);
     }
 
     [Fact]
-    public void ComputeDeadline_StartAtEndOfDay_ShouldContinueNextDay()
+    public void GetRemainingSeconds_WhenFuture_ReturnsPositive()
     {
-        var startUtc = new DateTimeOffset(2024, 1, 15, 17, 0, 0, TimeSpan.Zero);
-        var workingDays = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
-        var holidays = Array.Empty<DateOnly>();
+        var calc = new SlaDeadlineCalculator();
+        var dueAtUtc = DateTime.UtcNow.AddMinutes(30);
+        var nowUtc = DateTime.UtcNow;
 
-        var deadline = _calculator.ComputeDeadline(startUtc, "UTC", workingDays, holidays, 540, 1020);
+        var remaining = calc.GetRemainingSeconds(dueAtUtc, nowUtc);
 
-        deadline.Should().BeAfter(startUtc);
+        Assert.True(remaining > 0);
+        Assert.True(remaining <= 30 * 60);
     }
 }

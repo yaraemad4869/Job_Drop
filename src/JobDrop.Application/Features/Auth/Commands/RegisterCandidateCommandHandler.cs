@@ -1,4 +1,5 @@
-﻿using JobDrop.Application.Contracts.Identity;
+using Microsoft.EntityFrameworkCore;
+using JobDrop.Application.Contracts.Identity;
 using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Application.Features.Auth.DTOs;
 using JobDrop.Domain.Entities.Candidates;

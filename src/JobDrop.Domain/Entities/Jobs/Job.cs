@@ -73,4 +73,12 @@ public sealed class Job : BaseEntity
 
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
+
+    public int DailyIntakeCap { get; private set; } = 20;
+
+    public void SetDailyIntakeCap(int cap)
+    {
+        if (cap < 1) throw new ArgumentOutOfRangeException(nameof(cap));
+        DailyIntakeCap = cap;
+    }
 }

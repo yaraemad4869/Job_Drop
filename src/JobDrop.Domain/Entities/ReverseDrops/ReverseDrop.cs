@@ -1,4 +1,4 @@
-using JobDrop.Domain.Common;
+﻿using JobDrop.Domain.Common;
 using JobDrop.Domain.Enums;
 
 namespace JobDrop.Domain.Entities.ReverseDrops;
@@ -23,4 +23,24 @@ public sealed class ReverseDrop : ConcurrentAuditableEntity
 
     public Companies.Company? Company { get; set; }
     public Jobs.Job? Job { get; set; }
+
+    public void Accept()
+    {
+        Status = JobDrop.Domain.Enums.ReverseDropStatus.Accepted;
+    }
+
+        public void Decline()
+    {
+        if (Status != JobDrop.Domain.Enums.ReverseDropStatus.Sent)
+        {
+            throw new System.InvalidOperationException($"Cannot decline a Reverse Drop with status {Status}.");
+        }
+        Status = JobDrop.Domain.Enums.ReverseDropStatus.Declined;
+    }
+
+    public void Expire()
+    {
+        Status = JobDrop.Domain.Enums.ReverseDropStatus.ExpiredRefunded;
+    }
 }
+

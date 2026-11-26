@@ -20,5 +20,6 @@ public sealed class CandidateProfileConfiguration : IEntityTypeConfiguration<Can
         builder.Property(x => x.DropThemeCode).HasMaxLength(50);
 
         builder.HasIndex(x => x.UserId).IsUnique();
+        builder.Property(x => x.RowVersion).IsRowVersion();
     }
 }

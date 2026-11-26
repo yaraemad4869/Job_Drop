@@ -1,11 +1,13 @@
-using System.Text.Json;
 using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Domain.Entities.Observability;
 using JobDrop.Infrastructure.Persistence;
 
 namespace JobDrop.Infrastructure.Notifications;
 
-public sealed class OutboxPublisher : IOutboxPublisher
+/// <summary>
+/// Publishes events to the transactional outbox for reliable background processing.
+/// </summary>
+public sealed class OutboxPublisher : JobDrop.Application.Contracts.Persistence.IOutboxPublisher
 {
     private readonly ApplicationDbContext _db;
 
@@ -13,13 +15,12 @@ public sealed class OutboxPublisher : IOutboxPublisher
 
     public async Task PublishAsync(string eventType, object payload, CancellationToken cancellationToken = default)
     {
-        var msg = new OutboxMessage
-        {
-            EventType = eventType,
-            PayloadJson = JsonSerializer.Serialize(payload),
-            NextAttemptAtUtc = DateTimeOffset.UtcNow
-        };
-        _db.Set<OutboxMessage>().Add(msg);
+        // Use factory method to create OutboxMessage with proper encapsulation
+        var outboxMessage = OutboxMessage.Create(
+            eventType: eventType,
+            payloadJson: System.Text.Json.JsonSerializer.Serialize(payload));
+
+        _db.OutboxMessages.Add(outboxMessage);
         await _db.SaveChangesAsync(cancellationToken);
     }
 }

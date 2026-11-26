@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using JobDrop.Domain.Common;
 
 namespace JobDrop.Domain.Entities.Jobs;
@@ -17,4 +17,9 @@ public sealed class JobDailyIntake : ConcurrentAuditableEntity
 
     [NotMapped]
     public bool IsFull => DeliveredCount >= CapLimit;
+
+    public void IncrementDelivered()
+    {
+        DeliveredCount++;
+    }
 }

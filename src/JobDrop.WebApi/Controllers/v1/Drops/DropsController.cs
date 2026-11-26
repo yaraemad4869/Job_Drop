@@ -56,12 +56,30 @@ public sealed class DropsController : ControllerBase
     /// </summary>
     [HttpGet("me/drops")]
     [ProducesResponseType(typeof(List<MyDropDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetMyDrops(CancellationToken cancellationToken)
-    {
-        var query = new GetMyDropsQuery(
-            CandidateProfileId: _currentUser.CandidateProfileId ?? throw new UnauthorizedAccessException("Candidate profile not found."));
 
-        var result = await _sender.Send(query, cancellationToken);
+    /// Returns Blind or Disclosed dossier based on disclosure stage.
+    /// </summary>
+    [HttpGet("{dropId:guid}/dossier")]
+    public async Task<IActionResult> GetDossier(Guid dropId, CancellationToken ct)
+    {
+        var query = new JobDrop.Application.Features.Drops.Queries.GetDropDossierQuery(dropId);
+        var result = await _sender.Send(query, ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// GET /api/v1/drops/my-drops
+    /// Returns candidate's own drops.
+    /// CandidateProfileId is extracted from the authenticated user.
+    /// </summary>
+    [HttpGet("my-drops")]
+    public async Task<IActionResult> GetMyDrops(CancellationToken ct)
+    {
+        var candidateProfileId = _currentUser.CandidateProfileId 
+            ?? throw new UnauthorizedAccessException("Candidate profile not found for current user");
+        
+        var query = new JobDrop.Application.Features.Drops.Queries.GetMyDropsQuery(candidateProfileId);
+        var result = await _sender.Send(query, ct);
         return Ok(result);
     }
 }

@@ -14,5 +14,6 @@ public sealed class DropWalletBalanceConfiguration : IEntityTypeConfiguration<Dr
         
         
         builder.HasIndex(x => x.CandidateProfileId).IsUnique();
+        builder.Property(x => x.RowVersion).IsRowVersion();
     }
 }

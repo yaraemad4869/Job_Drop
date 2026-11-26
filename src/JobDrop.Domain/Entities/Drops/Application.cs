@@ -25,4 +25,16 @@ public sealed class Application : ConcurrentAuditableEntity
     public ApplicationSnapshot? Snapshot { get; set; }
     public Sla.ApplicationSla? Sla { get; set; }
     public ICollection<ApplicationEvent> Events { get; set; } = new List<ApplicationEvent>();
+
+    public void Cancel(string reason)
+    {
+        Status = JobDrop.Domain.Enums.DropStatus.Cancelled;
+        RejectionReasonCode = reason;
+    }
+
+    public void PromoteToDelivered()
+    {
+        Status = JobDrop.Domain.Enums.DropStatus.Delivered;
+        DeliveredAtUtc = DateTime.UtcNow;
+    }
 }
