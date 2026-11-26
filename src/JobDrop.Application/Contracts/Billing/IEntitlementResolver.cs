@@ -1,16 +1,19 @@
 namespace JobDrop.Application.Contracts.Billing;
 
-public sealed record Entitlements(
-    bool IsPro,
-    int DailyDropLimit,
-    int MonthlyReverseDropPool,
-    int MaxDocuments,
-    long MaxTotalDocumentBytes,
-    bool CanUseTalentSearch,
-    bool CanTransferSpecialDrops);
-
+/// <summary>
+/// Single source of truth for Premium entitlements across all quotas.
+/// </summary>
 public interface IEntitlementResolver
 {
-    Task<Entitlements> ResolveForCandidateAsync(Guid candidateProfileId, CancellationToken cancellationToken = default);
-    Task<Entitlements> ResolveForCompanyAsync(Guid companyId, CancellationToken cancellationToken = default);
+    Task<Entitlements> ResolveAsync(Guid userId, CancellationToken ct);
 }
+
+public sealed record Entitlements(
+    string PlanCode,
+    int DailyDropLimit,
+    int BonusDropLimit,
+    int SpecialDropLimit,
+    int ReverseDropMonthlyPool,
+    bool CanAccessTalentSearch,
+    int MaxDocuments,
+    long MaxTotalStorageBytes);

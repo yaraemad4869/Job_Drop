@@ -35,5 +35,15 @@ public sealed class ApplicationSla : BaseEntity
         Status = SlaStatus.ExpiredRefunded;
     }
     public byte[] RowVersion { get; private set; } = null!;
+
+    /// <summary>
+    /// Marks this SLA as expired and triggers refund workflow.
+    /// Called by SlaExpirationRefundWorker when DueAtUtc has passed
+    /// without candidate response.
+    /// </summary>
+    public void MarkExpired()
+    {
+        Status = JobDrop.Domain.Enums.SlaStatus.ExpiredRefunded;
+    }
 }
 

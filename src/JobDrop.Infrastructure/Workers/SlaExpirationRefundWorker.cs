@@ -1,101 +1,136 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using JobDrop.Application.Contracts.Persistence;
 using JobDrop.Domain.Entities.Drops;
 using JobDrop.Domain.Enums;
+using JobDrop.Domain.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+using SlaEntity = global::JobDrop.Domain.Entities.Drops.ApplicationSla;
 
 namespace JobDrop.Infrastructure.Workers;
 
+/// <summary>
+/// Finds expired, unanswered SLAs, marks the drop ExpiredRefunded, refunds 1 credit
+/// to BonusBalance and writes an idempotent DropLedgerEntry (refund:sla:{applicationId}).
+/// Bounded batch + single SaveChanges = atomic unit of work per cycle.
+/// </summary>
 public sealed class SlaExpirationRefundWorker : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceProvider _services;
     private readonly ILogger<SlaExpirationRefundWorker> _logger;
-    private readonly TimeSpan _checkInterval = TimeSpan.FromHours(1);
+    private readonly TimeSpan _interval = TimeSpan.FromMinutes(1);
+    private const int BatchSize = 50;
 
-    public SlaExpirationRefundWorker(IServiceProvider serviceProvider, ILogger<SlaExpirationRefundWorker> logger)
+    public SlaExpirationRefundWorker(IServiceProvider services, ILogger<SlaExpirationRefundWorker> logger)
     {
-        _serviceProvider = serviceProvider;
+        _services = services;
         _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("SLA Expiration Refund Worker is starting.");
+        _logger.LogInformation("SlaExpirationRefundWorker is starting.");
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
-
-                var now = DateTime.UtcNow;
-
-                // Find all pending SLAs that have expired
-                var expiredSlas = await context.ApplicationSlas
-                    .Where(s => s.Status == SlaStatus.Pending && s.DueAtUtc < now)
-                    .ToListAsync(stoppingToken);
-
-                foreach (var sla in expiredSlas)
-                {
-                    _logger.LogInformation("Processing expired SLA: {ApplicationId}", sla.ApplicationId);
-
-                    // 1. Mark as ExpiredRefunded
-                    sla.MarkExpiredRefunded();
-
-                    // 2. Fetch Application to get CandidateProfileId
-                    var application = await context.Applications
-                        .FirstOrDefaultAsync(a => a.Id == sla.ApplicationId, stoppingToken);
-                    
-                    if (application != null)
-                    {
-                        // 3. Fetch Wallet and Refund
-                        var wallet = await context.DropWalletBalances
-                            .FirstOrDefaultAsync(w => w.CandidateProfileId == application.CandidateProfileId, stoppingToken);
-
-                        if (wallet != null)
-                        {
-                            // Refund the credit (assuming Daily bucket for simplicity)
-                            wallet.RefundCredit(WalletBucket.Daily); 
-                            context.DropWalletBalances.Update(wallet);
-
-                            // 4. Create Ledger Entry for Refund
-                            var refundLedger = new DropLedgerEntry(
-                                application.CandidateProfileId,
-                                WalletBucket.Daily,
-                                1, // Positive delta for refund
-                                "SLA_EXPIRED_REFUND",
-                                sla.ApplicationId.ToString(),
-                                $"REFUND_{sla.Id}"
-                            );
-                            context.DropLedgerEntries.Add(refundLedger);
-                        }
-                    }
-
-                    // 5. Decrement Job Intake Count since the drop is voided
-                    if (application != null)
-                    {
-                        var job = await context.Jobs.FindAsync(new object[] { application.JobId }, stoppingToken);
-                        job?.DecrementIntake();
-                    }
-                }
-
-                if (expiredSlas.Count > 0)
-                {
-                    await context.SaveChangesAsync(stoppingToken);
-                    _logger.LogInformation("Successfully processed {Count} expired SLAs.", expiredSlas.Count);
-                }
+                await ProcessExpiredSlasAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while processing SLA expirations.");
             }
 
-            await Task.Delay(_checkInterval, stoppingToken);
+            try { await Task.Delay(_interval, stoppingToken); }
+            catch (OperationCanceledException) { break; }
+        }
+    }
+
+    private async Task ProcessExpiredSlasAsync(CancellationToken ct)
+    {
+        using var scope = _services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var walletPolicy = scope.ServiceProvider.GetRequiredService<DropWalletPolicy>();
+
+        var nowUtc = DateTime.UtcNow;
+
+        // DueAtUtc lives on ApplicationSla, NOT on Application.
+        var expiredSlas = await db.ApplicationSlas
+            .Where(s => s.Status == SlaStatus.Pending
+                     && s.RespondedAtUtc == null
+                     && s.DueAtUtc <= nowUtc)
+            .OrderBy(s => s.DueAtUtc)
+            .Take(BatchSize)
+            .ToListAsync(ct);
+
+        if (expiredSlas.Count == 0) return;
+
+        _logger.LogInformation("Found {Count} expired SLA(s) to refund.", expiredSlas.Count);
+
+        foreach (var sla in expiredSlas)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var application = await db.Applications
+                .FirstOrDefaultAsync(a => a.Id == sla.ApplicationId, ct);
+
+            if (application is null)
+            {
+                _logger.LogWarning("SLA {SlaId} has no Application {ApplicationId}.", sla.Id, sla.ApplicationId);
+                continue;
+            }
+
+            // Terminal-state guard (acts as a logical lease against re-processing).
+            if (application.Status != DropStatus.Delivered &&
+                application.Status != DropStatus.Opened &&
+                application.Status != DropStatus.Queued)
+            {
+                sla.MarkExpired();
+                continue;
+            }
+
+            var ledgerKey = $"refund:sla:{application.Id}";
+
+            var alreadyRefunded = await db.DropLedgerEntries
+                .AnyAsync(e => e.IdempotencyKey == ledgerKey, ct);
+
+            if (alreadyRefunded)
+            {
+                sla.MarkExpired();
+                continue;
+            }
+
+            var wallet = await db.DropWalletBalances
+                .FirstOrDefaultAsync(w => w.CandidateProfileId == application.CandidateProfileId, ct);
+
+            if (wallet is null)
+            {
+                _logger.LogWarning("Wallet missing for candidate {CandidateId}.", application.CandidateProfileId);
+                continue;
+            }
+
+            application.Status = DropStatus.ExpiredRefunded;
+            sla.MarkExpired();
+            walletPolicy.RefundCredit(wallet, WalletBucket.Bonus);
+
+            db.DropLedgerEntries.Add(new DropLedgerEntry(
+                candidateProfileId: application.CandidateProfileId,
+                bucket: WalletBucket.Bonus,
+                delta: 1,
+                reasonCode: "SlaExpiredRefund",
+                referenceId: application.Id.ToString(),
+                idempotencyKey: ledgerKey));
+
+            _logger.LogInformation("Refunded expired SLA for Application {ApplicationId}.", application.Id);
         }
 
-        _logger.LogInformation("SLA Expiration Refund Worker is stopping.");
+        await db.SaveChangesAsync(ct);
     }
 }

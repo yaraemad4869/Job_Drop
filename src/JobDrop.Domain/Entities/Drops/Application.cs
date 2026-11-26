@@ -1,4 +1,4 @@
-using JobDrop.Domain.Common;
+﻿using JobDrop.Domain.Common;
 using JobDrop.Domain.Enums;
 using JobDrop.Domain.Entities.Jobs;
 
@@ -36,5 +36,56 @@ public sealed class Application : ConcurrentAuditableEntity
     {
         Status = JobDrop.Domain.Enums.DropStatus.Delivered;
         DeliveredAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Factory method to create a new Application with Id and required fields.
+    /// </summary>
+    public static Application Create(
+        Guid id,
+        Guid jobId,
+        Guid companyId,
+        Guid candidateProfileId,
+        string? idempotencyKey = null)
+    {
+        var app = new Application();
+        app.Id = id;
+        app.JobId = jobId;
+        app.CompanyId = companyId;
+        app.CandidateProfileId = candidateProfileId;
+        app.Status = JobDrop.Domain.Enums.DropStatus.Queued;
+        app.IdempotencyKey = idempotencyKey;
+        return app;
+    }
+
+    public void Shortlist()
+    {
+        if (Status != JobDrop.Domain.Enums.DropStatus.Delivered && Status != JobDrop.Domain.Enums.DropStatus.Opened && Status != JobDrop.Domain.Enums.DropStatus.Reviewed)
+            throw new InvalidOperationException("Cannot shortlist from status " + Status);
+        Status = JobDrop.Domain.Enums.DropStatus.Shortlisted;
+    }
+
+    public void ScheduleInterview()
+    {
+        if (Status != JobDrop.Domain.Enums.DropStatus.Shortlisted && Status != JobDrop.Domain.Enums.DropStatus.Delivered && Status != JobDrop.Domain.Enums.DropStatus.Opened)
+            throw new InvalidOperationException("Cannot schedule interview from status " + Status);
+        Status = JobDrop.Domain.Enums.DropStatus.InterviewScheduled;
+    }
+
+    public void ExtendOffer()
+    {
+        if (Status != JobDrop.Domain.Enums.DropStatus.InterviewScheduled && Status != JobDrop.Domain.Enums.DropStatus.Shortlisted)
+            throw new InvalidOperationException("Cannot extend offer from status " + Status);
+        Status = JobDrop.Domain.Enums.DropStatus.OfferExtended;
+    }
+
+    public void RejectWithReason(string reasonCode, string? note = null)
+    {
+        if (string.IsNullOrWhiteSpace(reasonCode))
+            throw new ArgumentException("Rejection reason code is mandatory", nameof(reasonCode));
+        Status = JobDrop.Domain.Enums.DropStatus.Rejected;
+        RejectionReasonCode = reasonCode;
+        RejectionNote = note;
+        FinalizedAtUtc = System.DateTimeOffset.UtcNow;
     }
 }

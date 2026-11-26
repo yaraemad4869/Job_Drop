@@ -1,9 +1,8 @@
-using System.Net;
-using System.Text.Json;
-using FluentValidation;
 using JobDrop.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace JobDrop.WebApi.Middleware;
 
@@ -24,113 +23,42 @@ public sealed class GlobalExceptionMiddleware
         {
             await _next(context);
         }
+        catch (DomainRuleException ex)
+        {
+            _logger.LogWarning(ex, "Domain rule violation");
+            await WriteProblemDetails(context, StatusCodes.Status409Conflict, "urn:jobdrop:problem:domain-rule", "Domain rule violation", ex.Message, "DOMAIN_RULE_VIOLATION");
+        }
+        catch (NotFoundException ex)
+        {
+            await WriteProblemDetails(context, StatusCodes.Status404NotFound, "urn:jobdrop:problem:not-found", "Resource not found", ex.Message, "RESOURCE_NOT_FOUND");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            await WriteProblemDetails(context, StatusCodes.Status403Forbidden, "urn:jobdrop:problem:forbidden", "Access denied", ex.Message, "ACCESS_DENIED");
+        }
         catch (Exception ex)
         {
-            await HandleExceptionAsync(context, ex);
+            _logger.LogError(ex, "Unhandled exception");
+            await WriteProblemDetails(context, StatusCodes.Status500InternalServerError, "urn:jobdrop:problem:internal-error", "Internal server error", "An unexpected error occurred.", "INTERNAL_ERROR");
         }
     }
 
-    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static async Task WriteProblemDetails(HttpContext context, int statusCode, string type, string title, string detail, string code)
     {
-        var correlationId = context.Items["CorrelationId"]?.ToString() ?? Guid.CreateVersion7().ToString();
-        var traceId = context.TraceIdentifier;
-
-        HttpStatusCode status;
-        string type;
-        string title;
-        string code;
-        object? extensions = null;
-
-        switch (exception)
-        {
-            case ValidationException validation:
-                status = HttpStatusCode.BadRequest;
-                type = "urn:jobdrop:problem:validation";
-                title = "One or more validation errors occurred.";
-                code = "VALIDATION_FAILED";
-                extensions = new { errors = validation.Errors.GroupBy(e => e.PropertyName).ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()) };
-                break;
-
-            case NotFoundException nf:
-                status = HttpStatusCode.NotFound;
-                type = "urn:jobdrop:problem:not-found";
-                title = "Resource not found.";
-                code = nf.ErrorCode;
-                break;
-
-            case ForbiddenAccessException:
-                status = HttpStatusCode.Forbidden;
-                type = "urn:jobdrop:problem:forbidden";
-                title = "You do not have permission to perform this action.";
-                code = "FORBIDDEN";
-                break;
-
-            case DomainRuleException dr:
-                status = HttpStatusCode.Conflict;
-                type = "urn:jobdrop:problem:domain-rule";
-                title = dr.Message;
-                code = dr.ErrorCode;
-                if (dr.Errors.Count > 0) extensions = new { errors = dr.Errors };
-                break;
-
-            case ConcurrencyConflictException cc:
-                status = HttpStatusCode.Conflict;
-                type = "urn:jobdrop:problem:concurrency";
-                title = "Concurrency conflict.";
-                code = cc.ErrorCode;
-                break;
-
-            case InsufficientBalanceException:
-                status = HttpStatusCode.PaymentRequired;
-                type = "urn:jobdrop:problem:insufficient-balance";
-                title = exception.Message;
-                code = "INSUFFICIENT_BALANCE";
-                break;
-
-            case CapacityExceededException:
-                status = HttpStatusCode.Conflict;
-                type = "urn:jobdrop:problem:capacity-exceeded";
-                title = exception.Message;
-                code = "CAPACITY_EXCEEDED";
-                break;
-
-            case IdempotencyConflictException ic:
-                status = HttpStatusCode.Conflict;
-                type = "urn:jobdrop:problem:idempotency";
-                title = exception.Message;
-                code = "IDEMPOTENCY_CONFLICT";
-                break;
-
-            case UnauthorizedAccessException:
-                status = HttpStatusCode.Unauthorized;
-                type = "urn:jobdrop:problem:unauthorized";
-                title = "You are not authenticated.";
-                code = "UNAUTHORIZED";
-                break;
-
-            default:
-                _logger.LogError(exception, "Unhandled exception on {Path}", context.Request.Path);
-                status = HttpStatusCode.InternalServerError;
-                type = "urn:jobdrop:problem:internal";
-                title = "An unexpected error occurred.";
-                code = "INTERNAL_ERROR";
-                break;
-        }
-
-        var problem = new Dictionary<string, object?>
-        {
-            ["type"] = type,
-            ["title"] = title,
-            ["status"] = (int)status,
-            ["instance"] = context.Request.Path.Value,
-            ["traceId"] = traceId,
-            ["code"] = code,
-            ["correlationId"] = correlationId
-        };
-        if (extensions is not null) problem["extensions"] = extensions;
-
-        context.Response.StatusCode = (int)status;
+        context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/problem+json";
+
+        var problem = new ProblemDetails
+        {
+            Type = type,
+            Title = title,
+            Status = statusCode,
+            Detail = detail,
+            Instance = context.Request.Path
+        };
+        problem.Extensions["code"] = code;
+        problem.Extensions["traceId"] = context.TraceIdentifier;
+
         await context.Response.WriteAsync(JsonSerializer.Serialize(problem, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
     }
 }

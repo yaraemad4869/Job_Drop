@@ -7,17 +7,27 @@ namespace JobDrop.WebApi.Hubs;
 public sealed class ConversationHub : Hub
 {
     public async Task JoinConversation(string conversationId)
-        => await Groups.AddToGroupAsync(Context.ConnectionId, "conv_" + conversationId);
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"conv_{conversationId}");
+    }
 
     public async Task LeaveConversation(string conversationId)
-        => await Groups.RemoveFromGroupAsync(Context.ConnectionId, "conv_" + conversationId);
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"conv_{conversationId}");
+    }
 
-    public async Task ReceiveMessage(object message)
-        => await Clients.Group("conv_" + "convId").SendAsync("ReceiveMessage", message);
+    public async Task SendMessage(string conversationId, string messageJson)
+    {
+        await Clients.Group($"conv_{conversationId}").SendAsync("ReceiveMessage", messageJson);
+    }
 
-    public async Task UserTyping(string conversationId, string userCode)
-        => await Clients.OthersInGroup("conv_" + conversationId).SendAsync("UserTyping", conversationId, userCode);
+    public async Task SendTyping(string conversationId, string userCode)
+    {
+        await Clients.OthersInGroup($"conv_{conversationId}").SendAsync("UserTyping", conversationId, userCode);
+    }
 
-    public async Task MessageRead(string conversationId, Guid messageId, DateTime readAtUtc)
-        => await Clients.Group("conv_" + conversationId).SendAsync("MessageRead", conversationId, messageId, readAtUtc);
+    public async Task SendReadReceipt(string conversationId, string messageId, DateTime readAtUtc)
+    {
+        await Clients.OthersInGroup($"conv_{conversationId}").SendAsync("MessageRead", conversationId, messageId, readAtUtc);
+    }
 }

@@ -22,4 +22,16 @@ public sealed class JobDailyIntake : ConcurrentAuditableEntity
     {
         DeliveredCount++;
     }
+
+    /// <summary>
+    /// Factory method for test data seeding.
+    /// </summary>
+    public static JobDailyIntake CreateForTest(Guid jobId, DateOnly marketDate, int deliveredCount = 0)
+    {
+        var intake = new JobDailyIntake();
+        intake.JobId = jobId;
+        intake.MarketDate = marketDate;
+        intake.DeliveredCount = deliveredCount;
+        return intake;
+    }
 }

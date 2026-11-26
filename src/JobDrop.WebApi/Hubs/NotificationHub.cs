@@ -10,16 +10,27 @@ public sealed class NotificationHub : Hub
     {
         var userId = Context.UserIdentifier;
         if (!string.IsNullOrEmpty(userId))
-            await Groups.AddToGroupAsync(Context.ConnectionId, "user_" + userId);
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
+        }
         await base.OnConnectedAsync();
     }
 
-    public async Task DropDeliveredLive(object notification)
-        => await Clients.Group("company_" + "companyId").SendAsync("DropDeliveredLive", notification);
+    public async Task SendDropDeliveredLive(string dropNotificationJson)
+    {
+        var userId = Context.UserIdentifier;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            await Clients.Group($"user_{userId}").SendAsync("DropDeliveredLive", dropNotificationJson);
+        }
+    }
 
-    public async Task SlaTimerTicked(object tick)
-        => await Clients.Caller.SendAsync("SlaTimerTicked", tick);
-
-    public async Task DropRefundedLive(object refund)
-        => await Clients.User(Context.UserIdentifier!).SendAsync("DropRefundedLive", refund);
+    public async Task SendSlaTimerTicked(string slaTickJson)
+    {
+        var userId = Context.UserIdentifier;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            await Clients.Group($"user_{userId}").SendAsync("SlaTimerTicked", slaTickJson);
+        }
+    }
 }

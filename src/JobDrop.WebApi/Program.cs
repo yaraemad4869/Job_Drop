@@ -1,3 +1,5 @@
+using JobDrop.WebApi.Extensions;
+using JobDrop.WebApi.Middleware;
 using JobDrop.Application;
 using JobDrop.Application.Common;
 using JobDrop.Application.Contracts.Identity;
@@ -128,7 +130,7 @@ builder.Services.AddSingleton<JobDrop.Domain.Services.BlindDossierProjector>();
 
 // Infrastructure Services
 builder.Services.AddTransient<JobDrop.Application.Contracts.Billing.IPaymobClient, JobDrop.Infrastructure.Billing.PaymobClient>();
-builder.Services.AddTransient<JobDrop.Application.Contracts.Billing.IEntitlementResolver, JobDrop.Infrastructure.Billing.EntitlementResolver>();
+builder.Services.AddTransient<JobDrop.Application.Contracts.Billing.IEntitlementResolver, JobDrop.Infrastructure.Billing.DefaultEntitlementResolver>();
 builder.Services.AddTransient<JobDrop.Application.Contracts.Notifications.IEmailSender, JobDrop.Infrastructure.Notifications.EmailSender>();
 builder.Services.AddTransient<JobDrop.Application.Contracts.Storage.IMalwareScanner, JobDrop.Infrastructure.Storage.MalwareScanner>();
 builder.Services.AddTransient<JobDrop.Application.Contracts.Storage.IPrivateDocumentStorage, JobDrop.Infrastructure.Storage.PrivateDocumentStorage>();
@@ -143,7 +145,17 @@ builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.ReverseD
 builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.DocumentScanWorker>();
 builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.AccountDeletionPurgeWorker>();
 
-    var app = builder.Build();
+    
+// =====================================================================
+// SIGNALR + RATE LIMITING + ENTITLEMENTS (Phase 8)
+// =====================================================================
+builder.Services.AddSignalR();
+builder.Services.AddJobDropRateLimiting();
+builder.Services.AddTransient<JobDrop.Application.Contracts.Billing.IEntitlementResolver, JobDrop.Infrastructure.Billing.DefaultEntitlementResolver>();
+builder.Services.AddHostedService<JobDrop.Infrastructure.Workers.DocumentScanWorker>();
+builder.Services.AddHostedService<JobDrop.Infrastructure.Workers.AccountDeletionPurgeWorker>();
+
+var app = builder.Build();
 
     // =================================================================================================
     // Middleware Pipeline
@@ -166,10 +178,17 @@ builder.Services.AddHostedService<JobDrop.Infrastructure.BackgroundJobs.AccountD
     app.UseMiddleware<JobDrop.WebApi.Middleware.ExceptionHandlingMiddleware>();
     app.UseAuthentication();
     app.UseAuthorization();
+app.UseMiddleware<JobDrop.WebApi.Middleware.GlobalExceptionMiddleware>();
+
     app.MapControllers();
 
     Log.Information("JobDrop WebApi is ready.");
-    app.Run();
+    
+app.MapHub<JobDrop.WebApi.Hubs.NotificationHub>("/hubs/notifications");
+app.MapHub<JobDrop.WebApi.Hubs.ConversationHub>("/hubs/conversations");
+app.UseRateLimiter();
+
+app.Run();
 }
 catch (Exception ex)
 {
