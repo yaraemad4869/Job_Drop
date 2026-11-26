@@ -1,26 +1,29 @@
-﻿using JobDrop.Application.Common;
-using JobDrop.Application.Contracts.Persistence;
-using JobDrop.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using JobDrop.Application.Contracts.Persistence;
+using JobDrop.Infrastructure.Persistence;
 
 namespace JobDrop.Infrastructure;
 
-public static class InfrastructureServiceExtensions
+public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Register DbContext
+        // Add DbContext with Npgsql (PostgreSQL)
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
-            
-        // Register the interface mapping
-        services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
-        // Register DateTime Provider
-        services.AddScoped<IDateTimeProvider, JobDrop.Application.Common.SystemDateTimeProvider>();
-
+            options.UseNpgsql(
+                configuration.GetConnectionString("DefaultConnection", npgsql => npgsql.UseNetTopologySuite()),
+                npgsqlOptions =>
+                {
+                    npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+                    npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
+                }));
+        
+        // Register IApplicationDbContext
+        services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         
         return services;
     }
 }
+

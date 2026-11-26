@@ -72,7 +72,7 @@ public sealed class DropsController : ControllerBase
     /// Returns candidate's own drops.
     /// CandidateProfileId is extracted from the authenticated user.
     /// </summary>
-    [HttpGet("my-drops")]
+    [HttpGet("me/drops")]
     public async Task<IActionResult> GetMyDrops(CancellationToken ct)
     {
         var candidateProfileId = _currentUser.CandidateProfileId 
@@ -85,3 +85,5 @@ public sealed class DropsController : ControllerBase
 }
 
 public sealed record DispatchDropRequest(string IdempotencyKey);
+
+

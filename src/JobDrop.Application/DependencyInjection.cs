@@ -1,15 +1,21 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using FluentValidation;
+﻿using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace JobDrop.Application;
 
-public static class ApplicationServiceExtensions
+public static class DependencyInjection
 {
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        var assembly = Assembly.GetExecutingAssembly();
+        
+        // Register all FluentValidation validators
+        services.AddValidatorsFromAssembly(assembly);
+        
+        // Register MediatR (if not already registered in Program.cs)
+        // services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
+        
         return services;
     }
 }

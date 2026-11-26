@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace JobDrop.Infrastructure.Identity;
 
-public sealed class CurrentUserService : ICurrentUser
+public class CurrentUserService : ICurrentUser
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -13,36 +13,51 @@ public sealed class CurrentUserService : ICurrentUser
         _httpContextAccessor = httpContextAccessor;
     }
 
-    private ClaimsPrincipal? User => _httpContextAccessor.HttpContext?.User;
-
     public Guid? UserId
     {
         get
         {
-            var sub = User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? User?.FindFirstValue("sub");
-            return Guid.TryParse(sub, out var id) ? id : null;
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
+            {
+                return userId;
+            }
+            return null;
         }
     }
 
-    public string? Email => User?.FindFirstValue(ClaimTypes.Email);
-    public string? Handle => User?.FindFirstValue("handle");
-    public bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
+    public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
 
-    public IReadOnlyCollection<string> Roles =>
-        User?.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList()
-        ?? (IReadOnlyCollection<string>)Array.Empty<string>();
+    public string? Handle => _httpContextAccessor.HttpContext?.User?.FindFirst("handle")?.Value;
 
-    public bool IsInRole(string role) => Roles.Contains(role);
+    public IReadOnlyCollection<string> Roles
+    {
+        get
+        {
+            var roles = _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
+            return roles?.AsReadOnly() ?? new List<string>().AsReadOnly();
+        }
+    }
+
     public Guid? CandidateProfileId
     {
         get
         {
-            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst("candidate_profile_id");
-            if (claim != null && Guid.TryParse(claim.Value, out var profileId))
+            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst("candidateProfileId");
+            if (claim != null && Guid.TryParse(claim.Value, out var id))
             {
-                return profileId;
+                return id;
             }
             return null;
         }
+    }
+
+    public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+
+    public bool IsInRole(string role)
+    {
+        return _httpContextAccessor.HttpContext?.User?.IsInRole(role) ?? false;
     }
 }
