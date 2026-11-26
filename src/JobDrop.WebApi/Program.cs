@@ -68,7 +68,7 @@ try
         {
             Title = "JobDrop API",
             Version = "v1",
-            Description = "API for the JobDrop platform - Sprint"
+            Description = "API for the JobDrop platform"
         });
 
         c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
