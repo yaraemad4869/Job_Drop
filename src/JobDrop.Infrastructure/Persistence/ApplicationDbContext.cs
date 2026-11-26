@@ -113,7 +113,22 @@ public sealed class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, G
         return await base.SaveChangesAsync(cancellationToken);
     }
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    
+    // BE-01 to BE-18: New entity sets
+    public DbSet<SlaPolicy> SlaPolicies { get; set; } = null!;
+    public DbSet<RefundLedgerEntry> RefundLedgerEntries { get; set; } = null!;
+    public DbSet<RedactionRecord> RedactionRecords { get; set; } = null!;
+    public DbSet<ApplicationActionLog> ApplicationActionLogs { get; set; } = null!;
+    public DbSet<ConversationLifecycle> ConversationLifecycles { get; set; } = null!;
+    public DbSet<InterviewProposalState> InterviewProposalStates { get; set; } = null!;
+    public DbSet<DailyIntakeSchedule> DailyIntakeSchedules { get; set; } = null!;
+    public DbSet<ApplicationReviewEvent> ApplicationReviewEvents { get; set; } = null!;
+    public DbSet<MultiModeCommuteResult> MultiModeCommuteResults { get; set; } = null!;
+    public DbSet<CompanyRanking> CompanyRankings { get; set; } = null!;
+    public DbSet<CompanyCoverImage> CompanyCoverImages { get; set; } = null!;
+    public DbSet<LocationPrivacySettings> LocationPrivacySettings { get; set; } = null!;
+
+        protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);

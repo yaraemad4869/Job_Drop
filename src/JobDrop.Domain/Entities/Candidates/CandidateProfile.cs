@@ -87,5 +87,12 @@ public sealed class CandidateProfile : BaseEntity
         if (rowVersion != null) profile.RowVersion = rowVersion;
         return profile;
     }
+
+    // BE-11: Search and matching fields
+    public int ExperienceYears { get; set; }
+    public bool IsAvailableImmediately { get; set; }
+    public double MatchScore { get; set; }
+    public string? MatchBand { get; set; }
 }
+
 

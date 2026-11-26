@@ -1,36 +1,22 @@
-namespace JobDrop.Domain.Enums;
+﻿namespace JobDrop.Domain.Enums;
 
 /// <summary>
-/// Application lifecycle states per JobDrop specification.
+/// Application lifecycle states (BE-18).
+/// Queued applications do not start SLA countdown until delivered.
 /// </summary>
 public enum ApplicationStatus
 {
-    // Initial states
-    Draft = 0,
-    Queued = 1,
-    Delivered = 2,
-    
-    // Review states
-    Opened = 10,
-    Reviewed = 11,
-    Commented = 12,
-    
-    // Decision states
-    Shortlisted = 20,
-    InterviewScheduled = 21,
-    Assessment = 22,
-    OfferExtended = 23,
-    CounterOffered = 24,
-    Hired = 25,
-    
-    // Rejection states
-    Rejected = 30,
-    Withdrawn = 31,
-    
-    // Expiry states
-    ExpiredRefunded = 40,
-    Cancelled = 41,
-    
-    // Terminal states
-    Closed = 50
+    Queued = 0,
+    Delivered = 1,
+    Opened = 2,
+    Shortlisted = 3,
+    Interviewed = 4,
+    InterviewScheduled = 5,
+    Offered = 6,
+    OfferExtended = 7,
+    Hired = 8,
+    Rejected = 9,
+    Expired = 10,
+    Cancelled = 11,
+    Withdrawn = 12
 }

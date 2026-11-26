@@ -1,4 +1,4 @@
-using JobDrop.Domain.Common;
+﻿using JobDrop.Domain.Common;
 using JobDrop.Domain.Enums;
 using JobDrop.Domain.Entities.Jobs;
 
@@ -21,4 +21,14 @@ public sealed class Company : ConcurrentAuditableEntity
     public ICollection<CompanyOffice> Offices { get; set; } = new List<CompanyOffice>();
     public ICollection<CompanyMember> Members { get; set; } = new List<CompanyMember>();
     public ICollection<Job> Jobs { get; set; } = new List<Job>();
+
+    // BE-14: Ranking metrics
+    public double FollowUpRate { get; set; } = 0.0;
+    public int? OrdinalRank { get; set; }
+    public int? EligibleCompanyCount { get; set; }
+    public double? Percentile { get; set; }
+    
+    // BE-15: Cover image
+    public string? CoverImageStorageKey { get; set; }
+    public bool HasCoverImage { get; set; } = false;
 }

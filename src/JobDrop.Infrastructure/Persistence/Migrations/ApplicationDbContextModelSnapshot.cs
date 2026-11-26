@@ -189,6 +189,40 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.ToTable("Plans");
                 });
 
+            modelBuilder.Entity("JobDrop.Domain.Entities.Billing.RefundLedgerEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsProcessed")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("OriginalDebitId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TriggerEvent")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RefundLedgerEntries");
+                });
+
             modelBuilder.Entity("JobDrop.Domain.Entities.Billing.Subscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -304,6 +338,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<int>("ExperienceYears")
+                        .HasColumnType("integer");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -315,6 +352,15 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("IsAvailableImmediately")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MatchBand")
+                        .HasColumnType("text");
+
+                    b.Property<double>("MatchScore")
+                        .HasColumnType("double precision");
 
                     b.Property<string>("PreferredWorkModes")
                         .HasMaxLength(200)
@@ -630,6 +676,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("CoverImageStorageKey")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -645,6 +694,15 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
+
+                    b.Property<int?>("EligibleCompanyCount")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("FollowUpRate")
+                        .HasColumnType("double precision");
+
+                    b.Property<bool>("HasCoverImage")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Industry")
                         .IsRequired()
@@ -667,6 +725,12 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("LogoStorageKey")
                         .HasColumnType("text");
+
+                    b.Property<int?>("OrdinalRank")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("Percentile")
+                        .HasColumnType("double precision");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -723,6 +787,46 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId");
 
                     b.ToTable("CompanyCalendars");
+                });
+
+            modelBuilder.Entity("JobDrop.Domain.Entities.Companies.CompanyCoverImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("HeightPixels")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UploadedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("WidthPixels")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CompanyCoverImages");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Companies.CompanyHoliday", b =>
@@ -863,6 +967,46 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId");
 
                     b.ToTable("company_offices", (string)null);
+                });
+
+            modelBuilder.Entity("JobDrop.Domain.Entities.Companies.CompanyRanking", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CalculatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("EligibleCompanyCount")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("FollowUpRate")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("OrdinalRank")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("Percentile")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("SampleSize")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ScopeKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CompanyRankings");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Companies.OfficeFieldAudit", b =>
@@ -1053,6 +1197,36 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.ToTable("ConsentAuditLogs");
                 });
 
+            modelBuilder.Entity("JobDrop.Domain.Entities.Compliance.RedactionRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProcessorVersion")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("RedactedDocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RedactionRecords");
+                });
+
             modelBuilder.Entity("JobDrop.Domain.Entities.Drops.Application", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1081,12 +1255,18 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("DeliveredAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("FinalizedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("IdempotencyKey")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsQueued")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("JobId")
                         .HasColumnType("uuid");
@@ -1100,6 +1280,9 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("OpenedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("QueuedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("RejectionNote")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -1108,11 +1291,27 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<DateTimeOffset?>("ReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
+
+                    b.Property<DateTimeOffset?>("SentAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SlaPolicyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SlaPolicyVersion")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -1127,6 +1326,45 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasIndex("JobId", "Status", "DeliveredAtUtc");
 
                     b.ToTable("Applications", (string)null);
+                });
+
+            modelBuilder.Entity("JobDrop.Domain.Entities.Drops.ApplicationActionLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("ConsumesCredit")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("CreditAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("PerformedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PerformedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SourceState")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TargetState")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ApplicationActionLogs");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Drops.ApplicationEvent", b =>
@@ -1341,6 +1579,107 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PinnedDrops");
+                });
+
+            modelBuilder.Entity("JobDrop.Domain.Entities.Drops.SlaPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomRulesJson")
+                        .HasColumnType("text");
+
+                    b.Property<int>("DurationHours")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("UseWorkingHours")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SlaPolicies");
+                });
+
+            modelBuilder.Entity("JobDrop.Domain.Entities.Geography.LocationPrivacySettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AllowExactLocation")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("AllowResidentialPoint")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("InternalPrecisionMeters")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RetentionPurpose")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SharedPrecisionMeters")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LocationPrivacySettings");
+                });
+
+            modelBuilder.Entity("JobDrop.Domain.Entities.Geography.MultiModeCommuteResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CalculatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DestinationPointId")
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("DistanceKm")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Mode")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OriginPointId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RoutingProviderResponse")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("SatisfiesThreshold")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ThresholdMinutes")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MultiModeCommuteResults");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Geography.OperatingArea", b =>
@@ -1638,6 +1977,76 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.ToTable("UserSessions", (string)null);
                 });
 
+            modelBuilder.Entity("JobDrop.Domain.Entities.Jobs.ApplicationReviewEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("SatisfiesSLA")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("VisibilityScope")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ApplicationReviewEvents");
+                });
+
+            modelBuilder.Entity("JobDrop.Domain.Entities.Jobs.DailyIntakeSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CapLimit")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsManuallyPaused")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DailyIntakeSchedules");
+                });
+
             modelBuilder.Entity("JobDrop.Domain.Entities.Jobs.Job", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1826,7 +2235,13 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CandidateId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CandidateProfileId")
@@ -1838,17 +2253,38 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("DeclinedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ExclusivityExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsArchivedByCandidate")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsArchivedByCompany")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsExclusivityActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("LastMessageAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("MessagingEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("ReverseDropId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -1857,6 +2293,44 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasIndex("ReverseDropId");
 
                     b.ToTable("Conversations");
+                });
+
+            modelBuilder.Entity("JobDrop.Domain.Entities.Messaging.ConversationLifecycle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ExclusivityExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("InitiatorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsExclusivityActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("RespondentUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ConversationLifecycles");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Messaging.InterviewProposal", b =>
@@ -1895,6 +2369,45 @@ namespace JobDrop.Infrastructure.Persistence.Migrations
                     b.HasIndex("ConversationId");
 
                     b.ToTable("InterviewProposals");
+                });
+
+            modelBuilder.Entity("JobDrop.Domain.Entities.Messaging.InterviewProposalState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ConfirmedSlotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProposalId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProposalType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProposedSlotsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("RespondedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InterviewProposalStates");
                 });
 
             modelBuilder.Entity("JobDrop.Domain.Entities.Messaging.Message", b =>

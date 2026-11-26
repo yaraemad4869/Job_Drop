@@ -105,6 +105,21 @@ public interface IApplicationDbContext
     // Storage
     DbSet<StorageUploadIntent> StorageUploadIntents { get; }
 
+    
+    // BE-01 to BE-18: New Entities
+    DbSet<JobDrop.Domain.Entities.Drops.SlaPolicy> SlaPolicies { get; }
+    DbSet<JobDrop.Domain.Entities.Billing.RefundLedgerEntry> RefundLedgerEntries { get; }
+    DbSet<JobDrop.Domain.Entities.Compliance.RedactionRecord> RedactionRecords { get; }
+    DbSet<JobDrop.Domain.Entities.Drops.ApplicationActionLog> ApplicationActionLogs { get; }
+    DbSet<JobDrop.Domain.Entities.Messaging.ConversationLifecycle> ConversationLifecycles { get; }
+    DbSet<JobDrop.Domain.Entities.Messaging.InterviewProposalState> InterviewProposalStates { get; }
+    DbSet<JobDrop.Domain.Entities.Jobs.DailyIntakeSchedule> DailyIntakeSchedules { get; }
+    DbSet<JobDrop.Domain.Entities.Jobs.ApplicationReviewEvent> ApplicationReviewEvents { get; }
+    DbSet<JobDrop.Domain.Entities.Geography.MultiModeCommuteResult> MultiModeCommuteResults { get; }
+    DbSet<JobDrop.Domain.Entities.Companies.CompanyRanking> CompanyRankings { get; }
+    DbSet<JobDrop.Domain.Entities.Companies.CompanyCoverImage> CompanyCoverImages { get; }
+    DbSet<JobDrop.Domain.Entities.Geography.LocationPrivacySettings> LocationPrivacySettings { get; }
+
     // Mutations
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

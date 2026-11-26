@@ -88,4 +88,19 @@ public sealed class Application : ConcurrentAuditableEntity
         RejectionNote = note;
         FinalizedAtUtc = System.DateTimeOffset.UtcNow;
     }
+
+    // BE-01: SLA tracking fields
+    public DateTimeOffset? SentAtUtc { get; set; }
+    public DateTimeOffset? DueAtUtc { get; set; }
+    public string SlaPolicyVersion { get; set; } = "v1";
+    public Guid? SlaPolicyId { get; set; }
+    
+    // BE-18: Queue tracking
+    public DateTimeOffset? QueuedAtUtc { get; set; }
+    public bool IsQueued { get; set; } = false;
+    
+    // BE-12: Review tracking
+    public DateTimeOffset? ReviewedAtUtc { get; set; }
+    public Guid? ReviewedByUserId { get; set; }
 }
+

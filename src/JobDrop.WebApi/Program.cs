@@ -83,7 +83,24 @@ builder.Services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<
     builder.Services.AddSingleton<JobDrop.Domain.Services.DropWalletPolicy>();
     // -----------------------------------------------------------
 
-var app = builder.Build();
+
+    // BE-01 to BE-18: New Service Registrations
+    
+
+    // BE-01 to BE-18: Additional Service Registrations
+    builder.Services.AddScoped<JobDrop.Application.Services.ConversationService>();
+    builder.Services.AddScoped<JobDrop.Application.Services.TalentSearchService>();
+    builder.Services.AddScoped<JobDrop.Application.Services.IntakeSchedulerService>();
+    builder.Services.AddScoped<JobDrop.Application.Services.MultiModeCommuteService>();
+    builder.Services.AddScoped<JobDrop.Application.Services.CompanyRankingService>();
+    builder.Services.AddScoped<JobDrop.Application.Services.LocationPrivacyService>();
+    builder.Services.AddScoped<JobDrop.Application.Services.DossierPreviewService>();
+    builder.Services.AddScoped<JobDrop.Application.Features.Billing.Services.RefundSafetyService>();
+    builder.Services.AddScoped<JobDrop.Application.Features.Candidates.Services.BlindModeService>();
+
+    builder.Services.AddScoped<JobDrop.Application.Services.NeutralAvatarService>();
+
+    var app = builder.Build();
 
 // 3. Configure middleware
 if (app.Environment.IsDevelopment())
@@ -101,6 +118,9 @@ app.MapControllers();
 app.Run();
 
 public partial class Program { }
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-using JobDrop.Domain.Enums;
+﻿using JobDrop.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace JobDrop.Domain.Entities.Identity;

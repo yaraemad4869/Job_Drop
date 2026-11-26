@@ -95,4 +95,19 @@ public sealed class TestDbContext : DbContext, IApplicationDbContext
     {
         return base.SaveChangesAsync(cancellationToken);
     }
+
+    // BE-01 to BE-18: New entity sets for testing
+    public DbSet<SlaPolicy> SlaPolicies => Set<SlaPolicy>();
+    public DbSet<RefundLedgerEntry> RefundLedgerEntries => Set<RefundLedgerEntry>();
+    public DbSet<RedactionRecord> RedactionRecords => Set<RedactionRecord>();
+    public DbSet<ApplicationActionLog> ApplicationActionLogs => Set<ApplicationActionLog>();
+    public DbSet<ConversationLifecycle> ConversationLifecycles => Set<ConversationLifecycle>();
+    public DbSet<InterviewProposalState> InterviewProposalStates => Set<InterviewProposalState>();
+    public DbSet<DailyIntakeSchedule> DailyIntakeSchedules => Set<DailyIntakeSchedule>();
+    public DbSet<ApplicationReviewEvent> ApplicationReviewEvents => Set<ApplicationReviewEvent>();
+    public DbSet<MultiModeCommuteResult> MultiModeCommuteResults => Set<MultiModeCommuteResult>();
+    public DbSet<CompanyRanking> CompanyRankings => Set<CompanyRanking>();
+    public DbSet<CompanyCoverImage> CompanyCoverImages => Set<CompanyCoverImage>();
+    public DbSet<LocationPrivacySettings> LocationPrivacySettings => Set<LocationPrivacySettings>();
 }
+
